@@ -1,0 +1,44 @@
+# FIFA World Cup Fantasy 2026 – poängregler.
+# Bekräftade värden: mål 6 (MV/FÖR), 5 (MF), 4 (ANF), +1 mål utanför straffområdet,
+# kapten x2, scouting bonus för spelare ägda av <5% som ger >=4 poäng.
+# Värden markerade "verify" är vanliga fantasyvärden – justera om de officiella skiljer.
+
+appearance:
+  played: 1          # spelat 1-59 min
+  played_60: 2       # spelat 60+ min (ersätter "played", inte additivt)
+
+goals:
+  GK: 6
+  DEF: 6
+  MID: 5
+  FWD: 4
+outside_box_bonus: 1
+
+assist: 3            # verify
+
+clean_sheet:         # kräver 60+ spelade minuter
+  GK: 4              # verify
+  DEF: 4             # verify
+  MID: 1             # verify
+  FWD: 0
+
+saves_per_point: 3   # 1 poäng per 3 räddningar (MV)   verify
+penalty_save: 5      # verify
+penalty_miss: -2     # verify
+yellow_card: -1      # verify
+red_card: -3         # verify
+own_goal: -2         # verify
+
+goals_conceded:      # MV/FÖR: poäng per X insläppta (kräver 60+ min)
+  per_goals: 2       # verify
+  points: -1         # verify
+  positions: [GK, DEF]
+
+potm: 3              # player of the match   verify
+captain_multiplier: 2
+
+scouting_bonus:
+  ownership_threshold: 0.05   # ägd av <5% av managers
+  points_threshold: 4         # returnerar >=4 poäng
+  bonus: 2                    # extra poäng   verify
+  steepness: 1.0              # heuristik: brantare = säkrare tröskelträff

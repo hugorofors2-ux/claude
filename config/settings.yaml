@@ -1,0 +1,28 @@
+# Truppregler, formationer och modellparametrar.
+
+squad:
+  size: 15
+  positions: {GK: 2, DEF: 5, MID: 5, FWD: 3}
+  budget: 100.0          # miljoner $
+  budget_knockout: 105.0 # från Round of 32
+
+formation:               # giltiga intervall [min, max] för startelvan (11 spelare)
+  GK: [1, 1]
+  DEF: [3, 5]
+  MID: [2, 5]
+  FWD: [1, 3]
+  size: 11
+
+transfers:
+  free_per_matchday: 1
+  extra_transfer_cost: 4 # poängavdrag per byte utöver gratis
+
+model:
+  sub_appearance_prob: 0.15  # P(icke-startare gör inhopp)
+  avg_team_xg: 1.35          # ligasnitt för att skala räddningar
+  base_total_goals: 2.6      # förväntade totalmål när odds saknas
+  odds_supremacy_coef: 2.0   # (p_home - p_away) -> målsupremati
+  ranking_supremacy_coef: 1.0 # rankingpoängdiff/100 -> supremati (fallback)
+  outside_box_frac_default: 0.12 # andel av en spelares mål utifrån
+  potm_scale: 0.06           # P(POTM) ~ scale * (xg + xa)
+  potm_cap: 0.25

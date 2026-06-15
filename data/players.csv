@@ -1,0 +1,49 @@
+id,name,team,position,price,start_prob,goal_share,assist_share,saves_p90,yellow_p90,ownership,pen_taker
+1,E. Martinez,Argentina,GK,5.5,0.98,0.0,0.0,3.0,0.10,0.30,0
+2,L. Messi,Argentina,FWD,11.0,0.90,0.35,0.30,0.0,0.08,0.55,1
+3,J. Alvarez,Argentina,FWD,9.0,0.85,0.30,0.15,0.0,0.10,0.40,0
+4,R. De Paul,Argentina,MID,6.5,0.90,0.08,0.18,0.0,0.20,0.12,0
+5,N. Otamendi,Argentina,DEF,5.0,0.85,0.05,0.03,0.0,0.25,0.10,0
+6,N. Molina,Argentina,DEF,5.0,0.80,0.04,0.10,0.0,0.18,0.08,0
+7,M. Maignan,France,GK,5.5,0.95,0.0,0.0,3.2,0.08,0.20,0
+8,K. Mbappe,France,FWD,11.5,0.95,0.40,0.20,0.0,0.10,0.65,1
+9,A. Griezmann,France,MID,8.5,0.90,0.20,0.30,0.0,0.10,0.35,0
+10,A. Tchouameni,France,MID,6.0,0.85,0.06,0.08,0.0,0.22,0.10,0
+11,W. Saliba,France,DEF,5.5,0.88,0.05,0.04,0.0,0.15,0.18,0
+12,T. Hernandez,France,DEF,5.5,0.85,0.06,0.15,0.0,0.20,0.14,0
+13,Unai Simon,Spain,GK,5.0,0.95,0.0,0.0,3.0,0.08,0.12,0
+14,Lamine Yamal,Spain,MID,9.5,0.90,0.25,0.35,0.0,0.10,0.50,0
+15,N. Williams,Spain,FWD,8.0,0.85,0.28,0.18,0.0,0.12,0.30,0
+16,Pedri,Spain,MID,7.5,0.90,0.12,0.25,0.0,0.12,0.28,0
+17,R. Le Normand,Spain,DEF,5.0,0.82,0.04,0.03,0.0,0.18,0.06,0
+18,M. Cucurella,Spain,DEF,5.0,0.85,0.04,0.12,0.0,0.22,0.10,0
+19,J. Pickford,England,GK,5.0,0.95,0.0,0.0,2.8,0.06,0.15,0
+20,H. Kane,England,FWD,10.5,0.95,0.42,0.18,0.0,0.10,0.60,1
+21,J. Bellingham,England,MID,9.0,0.92,0.25,0.25,0.0,0.15,0.45,0
+22,B. Saka,England,MID,8.5,0.88,0.22,0.28,0.0,0.10,0.38,0
+23,J. Stones,England,DEF,5.5,0.85,0.06,0.04,0.0,0.14,0.12,0
+24,K. Walker,England,DEF,5.0,0.80,0.03,0.08,0.0,0.16,0.08,0
+25,Alisson,Brazil,GK,5.5,0.95,0.0,0.0,3.1,0.06,0.22,0
+26,Vinicius Jr,Brazil,FWD,10.5,0.92,0.35,0.25,0.0,0.14,0.55,0
+27,Rodrygo,Brazil,MID,8.0,0.85,0.22,0.22,0.0,0.10,0.30,0
+28,Raphinha,Brazil,MID,7.5,0.88,0.20,0.24,0.0,0.12,0.32,1
+29,Marquinhos,Brazil,DEF,5.5,0.90,0.06,0.03,0.0,0.16,0.16,0
+30,Danilo,Brazil,DEF,4.5,0.78,0.03,0.07,0.0,0.18,0.05,0
+31,D. Costa,Portugal,GK,4.5,0.90,0.0,0.0,2.9,0.08,0.08,0
+32,C. Ronaldo,Portugal,FWD,9.5,0.88,0.38,0.12,0.0,0.10,0.48,1
+33,B. Fernandes,Portugal,MID,8.5,0.92,0.22,0.30,0.0,0.18,0.40,0
+34,R. Leao,Portugal,MID,8.0,0.82,0.20,0.20,0.0,0.12,0.30,0
+35,Ruben Dias,Portugal,DEF,5.5,0.90,0.05,0.03,0.0,0.16,0.15,0
+36,N. Mendes,Portugal,DEF,5.0,0.85,0.04,0.12,0.0,0.20,0.10,0
+37,B. Verbruggen,Netherlands,GK,4.5,0.90,0.0,0.0,2.9,0.06,0.06,0
+38,M. Depay,Netherlands,FWD,8.0,0.85,0.32,0.20,0.0,0.12,0.25,1
+39,C. Gakpo,Netherlands,MID,7.5,0.88,0.22,0.22,0.0,0.10,0.28,0
+40,F. de Jong,Netherlands,MID,7.0,0.85,0.10,0.18,0.0,0.16,0.18,0
+41,V. van Dijk,Netherlands,DEF,6.0,0.92,0.08,0.04,0.0,0.14,0.30,0
+42,D. Dumfries,Netherlands,DEF,5.0,0.85,0.06,0.14,0.0,0.22,0.12,0
+43,K. Casteels,Belgium,GK,4.5,0.85,0.0,0.0,2.7,0.06,0.05,0
+44,R. Lukaku,Belgium,FWD,8.5,0.88,0.35,0.18,0.0,0.12,0.30,0
+45,K. De Bruyne,Belgium,MID,9.0,0.90,0.20,0.38,0.0,0.12,0.42,1
+46,J. Doku,Belgium,MID,7.0,0.82,0.18,0.22,0.0,0.10,0.20,0
+47,W. Faes,Belgium,DEF,4.5,0.80,0.04,0.03,0.0,0.20,0.04,0
+48,T. Castagne,Belgium,DEF,4.5,0.82,0.03,0.10,0.0,0.18,0.05,0
