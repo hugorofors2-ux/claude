@@ -22,7 +22,26 @@ ur din trupp samt transferförslag, dag för dag.
 pip install -r requirements.txt
 ```
 
-## Användning
+## Interaktiv webb-dashboard (rekommenderas)
+
+```bash
+streamlit run app.py
+```
+
+Öppnas på `http://localhost:8501` i din webbläsare (ingen domän eller hosting behövs –
+den kör lokalt på din dator). I gränssnittet kan du:
+
+- **Bygga ditt lag** genom att söka och välja 15 spelare per position, med automatisk
+  budget- och positionskontroll.
+- Välja **matchdag** och se varje spelares **motståndare, hemma/borta och matchdatum**.
+- Se **xP per spelare**, **optimal startelva + formation**, **kaptens-/vicekaptenstips**
+  och **transferförslag** – allt för den valda matchdagen.
+- Ladda ner laget som `my_squad.csv` för att återanvända i CLI:t.
+
+> Vill du nå appen utanför din egen dator kan du gratis-deploya till
+> [Streamlit Community Cloud](https://streamlit.io/cloud).
+
+## Användning (CLI)
 
 ```bash
 python -m fantasy_wc xp --matchday 1            # xP per spelare (--detail för komponenter)

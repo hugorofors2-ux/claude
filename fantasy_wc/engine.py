@@ -30,16 +30,31 @@ class Engine:
             ctx[m.away] = m
         return ctx
 
+    def fixture_info(self, matchday: int) -> dict[str, dict]:
+        """Mappa lag -> {opponent, date, venue} för matchdagen."""
+        rows = self.data["fixtures"][self.data["fixtures"]["matchday"] == matchday]
+        info: dict[str, dict] = {}
+        for _, r in rows.iterrows():
+            date = r.get("date", "")
+            info[r["home"]] = {"opponent": r["away"], "date": date, "venue": "H"}
+            info[r["away"]] = {"opponent": r["home"], "date": date, "venue": "B"}
+        return info
+
+    def available_matchdays(self) -> list[int]:
+        return sorted(set(self.data["fixtures"]["matchday"]))
+
     def xp_table(self, matchday: int, players: pd.DataFrame | None = None) -> pd.DataFrame:
         """xP per spelare för matchdagen. Spelare utan match får xP=0."""
         if players is None:
             players = self.data["players"]
         ctx = self.match_context(matchday)
+        fix = self.fixture_info(matchday)
         model_cfg = self.settings["model"]
 
         rows = []
         for _, p in players.iterrows():
             match = ctx.get(p["team"])
+            finfo = fix.get(p["team"], {})
             if match is None:
                 xp, comps = 0.0, {}
             else:
@@ -52,6 +67,9 @@ class Engine:
                     "name": p["name"],
                     "team": p["team"],
                     "position": p["position"],
+                    "opponent": finfo.get("opponent", "-"),
+                    "venue": finfo.get("venue", "-"),
+                    "date": finfo.get("date", "-"),
                     "price": p["price"],
                     "ownership": p["ownership"],
                     "xp": round(xp, 2),
@@ -111,6 +129,30 @@ class Engine:
         cap_xp = max(r["xp"] for r in best["xi"])
         return best["total_xp"] + cap_xp * (self.scoring["captain_multiplier"] - 1)
 
+    def validate_squad(self, squad_ids: list) -> dict:
+        """Kontrollera storlek, positionssammansättning och budget."""
+        rules = self.settings["squad"]
+        players = self.data["players"]
+        owned = players.loc[players["id"].isin(squad_ids)]
+        errors: list[str] = []
+
+        if len(squad_ids) != rules["size"]:
+            errors.append(f"Truppen måste ha {rules['size']} spelare (har {len(squad_ids)}).")
+        counts = owned["position"].value_counts().to_dict()
+        for pos, need in rules["positions"].items():
+            have = counts.get(pos, 0)
+            if have != need:
+                errors.append(f"{pos}: behöver {need}, har {have}.")
+        spent = owned["price"].sum()
+        if spent > rules["budget"] + 1e-9:
+            errors.append(f"Över budget: {spent:.1f}m av {rules['budget']:.1f}m.")
+        return {
+            "ok": not errors,
+            "errors": errors,
+            "spent": round(float(spent), 1),
+            "bank": round(rules["budget"] - float(spent), 1),
+        }
+
     # ---- Transfers -------------------------------------------------------
     def bank(self, squad_ids: list | None = None) -> float:
         if squad_ids is None:
@@ -118,13 +160,14 @@ class Engine:
         owned = self.data["players"].loc[self.data["players"]["id"].isin(squad_ids)]
         return round(self.settings["squad"]["budget"] - owned["price"].sum(), 2)
 
-    def suggest_transfers(self, matchday: int, top_n: int = 5) -> list[dict]:
+    def suggest_transfers(self, matchday: int, top_n: int = 5, squad_ids: list | None = None) -> list[dict]:
         """Förslag på enskilda byten (ut->in) rankade på xP-vinst.
 
         Respekterar positionsregler (samma position), budget och poängavdrag
         för byten utöver gratiskvoten.
         """
-        squad_ids = list(self.data["squad"]["id"])
+        if squad_ids is None:
+            squad_ids = list(self.data["squad"]["id"])
         players = self.data["players"]
         owned = players.loc[players["id"].isin(squad_ids)]
         bank = self.bank(squad_ids)
