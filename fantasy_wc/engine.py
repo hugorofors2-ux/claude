@@ -129,6 +129,38 @@ class Engine:
         cap_xp = max(r["xp"] for r in best["xi"])
         return best["total_xp"] + cap_xp * (self.scoring["captain_multiplier"] - 1)
 
+    def score_from_lookup(self, squad_ids: list, lookup: dict[int, dict]) -> float:
+        """Snabb trupp-xP från en förberäknad {id: {xp, position}}-tabell.
+
+        Samma logik som best_xi + kaptensbonus men utan att räkna om händelser –
+        används vid transferutvärdering där xP redan är beräknat en gång.
+        """
+        by_pos: dict[str, list[float]] = {"GK": [], "DEF": [], "MID": [], "FWD": []}
+        for pid in squad_ids:
+            rec = lookup[pid]
+            by_pos[rec["position"]].append(rec["xp"])
+        for v in by_pos.values():
+            v.sort(reverse=True)
+
+        form = self.settings["formation"]
+        best_total = None
+        for d in range(form["DEF"][0], form["DEF"][1] + 1):
+            for m in range(form["MID"][0], form["MID"][1] + 1):
+                for f in range(form["FWD"][0], form["FWD"][1] + 1):
+                    if 1 + d + m + f != form["size"]:
+                        continue
+                    if len(by_pos["GK"]) < 1 or len(by_pos["DEF"]) < d or len(by_pos["MID"]) < m or len(by_pos["FWD"]) < f:
+                        continue
+                    xi = by_pos["GK"][:1] + by_pos["DEF"][:d] + by_pos["MID"][:m] + by_pos["FWD"][:f]
+                    total = sum(xi)
+                    if best_total is None or total > best_total:
+                        best_total = total
+        if best_total is None:
+            return 0.0
+        all_xp = [lookup[pid]["xp"] for pid in squad_ids]
+        cap_bonus = max(all_xp) * (self.scoring["captain_multiplier"] - 1)
+        return best_total + cap_bonus
+
     def validate_squad(self, squad_ids: list) -> dict:
         """Kontrollera storlek, positionssammansättning och budget."""
         rules = self.settings["squad"]
@@ -171,12 +203,18 @@ class Engine:
         players = self.data["players"]
         owned = players.loc[players["id"].isin(squad_ids)]
         bank = self.bank(squad_ids)
-        base_score = self.squad_score(matchday, squad_ids)
         free = self.settings["transfers"]["free_per_matchday"]
         hit = self.settings["transfers"]["extra_transfer_cost"]
         cost = 0 if free >= 1 else hit  # ett byte är gratis om free>=1
 
         candidates = players.loc[~players["id"].isin(squad_ids)]
+
+        # Förberäkna xP en gång för truppen + alla kandidater, sedan ren urvalsmatte.
+        relevant = players.loc[players["id"].isin(set(squad_ids) | set(candidates["id"]))]
+        table = self.xp_table(matchday, relevant)
+        lookup = {r["id"]: {"xp": r["xp"], "position": r["position"]} for r in table.to_dict("records")}
+        base_score = self.score_from_lookup(squad_ids, lookup)
+
         suggestions = []
         for _, out_p in owned.iterrows():
             pool = candidates[candidates["position"] == out_p["position"]]
@@ -184,7 +222,7 @@ class Engine:
                 if in_p["price"] > out_p["price"] + bank:
                     continue
                 new_ids = [i for i in squad_ids if i != out_p["id"]] + [in_p["id"]]
-                delta = self.squad_score(matchday, new_ids) - base_score - cost
+                delta = self.score_from_lookup(new_ids, lookup) - base_score - cost
                 suggestions.append(
                     {
                         "out": out_p["name"],

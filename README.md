@@ -55,15 +55,32 @@ python -m fantasy_wc fetch                       # försök hämta odds automati
 
 | Fil | Innehåll |
 |-----|----------|
-| `teams.csv` | Lag, grupp, FIFA-ranking och rankingpoäng |
-| `fixtures.csv` | Matchschema per matchdag |
+| `teams.csv` | Alla 48 VM-lag, grupp och lagstyrka (rankingpoäng) |
+| `fixtures.csv` | Matchschema per matchdag (exempel – fyll på med riktigt VM-schema) |
 | `odds.csv` | 1X2-odds, Over/Under och (valfritt) färdig `home_xg`/`away_xg` |
-| `players.csv` | Spelare: position, pris, `start_prob`, `goal_share`, `assist_share`, m.m. |
+| `players.csv` | Alla 1248 spelare: officiell position, pris, ägarandel m.m. |
 | `my_squad.csv` | Dina 15 spelare (`id`) samt kapten/vice |
 
-**Dag för dag:** lägg in/uppdatera matchdagens odds i `odds.csv`, justera spelarnas
-`start_prob` efter laguppställningar, och kör kommandona ovan för den matchdagen.
-`my_squad.csv` listar bara spelar-`id` – bank/budget räknas automatiskt från priserna.
+### Officiell data
+
+`players.csv` och `teams.csv` är genererade från det officiella FIFA World Cup
+Fantasy-datat (1248 spelare, 48 lag) via
+[fifa-wc2026-fantasy-analytics](https://github.com/jlbgouveia/fifa-wc2026-fantasy-analytics)
+(ögonblicksbild 5 juni 2026). Direkt från FIFA kommer: **position, pris (`price`),
+ägarandel (`ownership`), startsannolikhet (`start_prob`)** och poängfälten
+`avg_points`/`total_points` (= 0 före turneringsstart).
+
+Modellinputs som FIFA inte publicerar är **härledda** och kan förfinas:
+- `goal_share`/`assist_share` – andel av lagets mål/assist, från spelarens mål- och
+  assist-takt över 4 år (klubb + landslag); position-prior där statistik saknas.
+- `start_prob` – mappad från FIFA:s "Likely/Maybe/Unlikely Starter".
+- `teams.csv: ranking_points` – lagstyrka härledd ur de officiella priserna
+  (medel av lagets 11 dyraste). Används bara som fallback när odds saknas.
+
+**Dag för dag:** lägg in/uppdatera matchdagens odds i `odds.csv` (och lägg till
+riktiga fixtures i `fixtures.csv`), justera ev. `start_prob` efter laguppställningar,
+och kör kommandona ovan. `my_squad.csv` listar bara spelar-`id` – bank/budget räknas
+automatiskt från priserna.
 
 ## Datahämtning
 
