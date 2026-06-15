@@ -19,15 +19,27 @@ class Engine:
 
     # ---- xP per spelare -------------------------------------------------
     def match_context(self, matchday: int) -> dict[str, odds_model.MatchXG]:
-        """Mappa lag -> MatchXG för matchdagen."""
+        """Mappa lag -> MatchXG för matchdagen.
+
+        Matcherna kommer alltid från fixtures.csv (rätt motståndare). Odds från
+        odds.csv används som override för xG när de finns, annars härleds xG från
+        lagstyrkan (ranking) i teams.csv.
+        """
         team_points = dict(zip(self.data["teams"]["team"], self.data["teams"]["ranking_points"]))
-        matches = odds_model.build_match_xg(
-            self.data["odds"], matchday, self.settings["model"], team_points
-        )
+        fixtures = self.data["fixtures"][self.data["fixtures"]["matchday"] == matchday]
+        odds = self.data["odds"]
+        odds_md = odds[odds["matchday"] == matchday] if "matchday" in odds.columns else odds.iloc[0:0]
+        model_cfg = self.settings["model"]
+
         ctx: dict[str, odds_model.MatchXG] = {}
-        for m in matches:
-            ctx[m.home] = m
-            ctx[m.away] = m
+        for _, fx in fixtures.iterrows():
+            row = {"home": fx["home"], "away": fx["away"]}
+            match = odds_md[(odds_md["home"] == fx["home"]) & (odds_md["away"] == fx["away"])]
+            if not match.empty:
+                row.update(match.iloc[0].to_dict())
+            m = odds_model.xg_from_odds_row(pd.Series(row), model_cfg, team_points)
+            ctx[fx["home"]] = m
+            ctx[fx["away"]] = m
         return ctx
 
     def fixture_info(self, matchday: int) -> dict[str, dict]:

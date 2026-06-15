@@ -22,7 +22,7 @@ model:
   avg_team_xg: 1.35          # ligasnitt för att skala räddningar
   base_total_goals: 2.6      # förväntade totalmål när odds saknas
   odds_supremacy_coef: 2.0   # (p_home - p_away) -> målsupremati
-  ranking_supremacy_coef: 1.0 # rankingpoängdiff/100 -> supremati (fallback)
+  ranking_supremacy_coef: 0.4 # rankingpoängdiff/100 -> supremati (fallback när odds saknas)
   outside_box_frac_default: 0.12 # andel av en spelares mål utifrån
   potm_scale: 0.06           # P(POTM) ~ scale * (xg + xa)
   potm_cap: 0.25

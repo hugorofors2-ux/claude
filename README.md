@@ -56,8 +56,8 @@ python -m fantasy_wc fetch                       # försök hämta odds automati
 | Fil | Innehåll |
 |-----|----------|
 | `teams.csv` | Alla 48 VM-lag, grupp och lagstyrka (rankingpoäng) |
-| `fixtures.csv` | Matchschema per matchdag (exempel – fyll på med riktigt VM-schema) |
-| `odds.csv` | 1X2-odds, Over/Under och (valfritt) färdig `home_xg`/`away_xg` |
+| `fixtures.csv` | Officiellt VM-schema: 72 gruppmatcher i matchdag 1–3 (FIFA Fantasy-omgångar) |
+| `odds.csv` | En rad per match; fyll i 1X2/Over-Under eller färdig `home_xg`/`away_xg` (tomt = ranking-fallback) |
 | `players.csv` | Alla 1248 spelare: officiell position, pris, ägarandel m.m. |
 | `my_squad.csv` | Dina 15 spelare (`id`) samt kapten/vice |
 
@@ -77,10 +77,12 @@ Modellinputs som FIFA inte publicerar är **härledda** och kan förfinas:
 - `teams.csv: ranking_points` – lagstyrka härledd ur de officiella priserna
   (medel av lagets 11 dyraste). Används bara som fallback när odds saknas.
 
-**Dag för dag:** lägg in/uppdatera matchdagens odds i `odds.csv` (och lägg till
-riktiga fixtures i `fixtures.csv`), justera ev. `start_prob` efter laguppställningar,
-och kör kommandona ovan. `my_squad.csv` listar bara spelar-`id` – bank/budget räknas
-automatiskt från priserna.
+Schemat (`fixtures.csv`) och matchdagarna är det officiella gruppspelet. Motståndare
+och datum kommer alltid därifrån; odds är bara en override för xG.
+
+**Dag för dag:** fyll i matchdagens odds i `odds.csv` (frivilligt – utan odds används
+ranking-fallback), justera ev. `start_prob` efter laguppställningar, och kör kommandona
+ovan. `my_squad.csv` listar bara spelar-`id` – bank/budget räknas automatiskt från priserna.
 
 ## Datahämtning
 

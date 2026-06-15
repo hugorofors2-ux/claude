@@ -18,10 +18,9 @@ import numpy as np
 import pandas as pd
 import requests
 
-SOURCE_URL = (
-    "https://raw.githubusercontent.com/jlbgouveia/"
-    "fifa-wc2026-fantasy-analytics/main/wc2026_players.csv"
-)
+BASE = "https://raw.githubusercontent.com/jlbgouveia/fifa-wc2026-fantasy-analytics/main"
+SOURCE_URL = f"{BASE}/wc2026_players.csv"
+ROUNDS_URL = f"{BASE}/fifa_fantasy_rounds.json"  # officiella fantasy-omgångar (matchdagar)
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 START_MAP = {"Likely Starter": 0.90, "Maybe Starter": 0.45, "Unlikely Starter": 0.12}
@@ -87,13 +86,44 @@ def build_teams(src: pd.DataFrame, players: pd.DataFrame) -> pd.DataFrame:
     })
 
 
+def build_fixtures() -> pd.DataFrame:
+    """Riktigt VM-schema från officiella FIFA Fantasy-omgångar (matchdag = round id)."""
+    resp = requests.get(ROUNDS_URL, timeout=30)
+    resp.raise_for_status()
+    rounds = resp.json()
+    rows = []
+    for r in rounds:
+        for t in r["tournaments"]:
+            rows.append({
+                "matchday": r["id"],
+                "date": t["date"][:10],
+                "home": t["homeSquadName"],
+                "away": t["awaySquadName"],
+            })
+    return pd.DataFrame(rows).sort_values(["matchday", "date", "home"]).reset_index(drop=True)
+
+
 def main() -> None:
     src = load_source()
     players = build_players(src)
     teams = build_teams(src, players)
     players.to_csv(DATA_DIR / "players.csv", index=False)
     teams.to_csv(DATA_DIR / "teams.csv", index=False)
-    print(f"Skrev {len(players)} spelare och {len(teams)} lag till {DATA_DIR}.")
+
+    fixtures = build_fixtures()
+    fixtures.to_csv(DATA_DIR / "fixtures.csv", index=False)
+    # odds-mall: en rad per match med tomma odds (fylls vid behov; annars ranking-fallback)
+    odds = fixtures[["matchday", "home", "away"]].copy()
+    for col in ["home_odds", "draw_odds", "away_odds", "total_line", "home_xg", "away_xg"]:
+        odds[col] = ""
+    if not (DATA_DIR / "odds.csv").exists():
+        odds.to_csv(DATA_DIR / "odds.csv", index=False)
+        odds_note = "skrev ny odds.csv-mall"
+    else:
+        odds_note = "behöll befintlig odds.csv"
+
+    print(f"Skrev {len(players)} spelare, {len(teams)} lag, {len(fixtures)} matcher "
+          f"till {DATA_DIR} ({odds_note}).")
 
 
 if __name__ == "__main__":
