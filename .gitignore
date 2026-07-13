@@ -3,3 +3,8 @@ __pycache__/
 .pytest_cache/
 data/odds_fetched.csv
 .venv/
+
+# Budgetverktyget lagrar dina bankdata lokalt – checka aldrig in dessa.
+budget/data/*.csv
+budget/data/*.json
+!budget/data/.gitkeep

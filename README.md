@@ -1,3 +1,14 @@
+## Verktyg i det här repot
+
+Detta repo innehåller två fristående Streamlit-verktyg:
+
+- **Fantasy FIFA VM 2026** (`app.py`) – beskrivs nedan.
+- **Budget & utgiftsanalys** (`budget_app.py`) – ladda upp kontoutdrag, få utgifterna
+  automatiskt kategoriserade, sätt egen budget månad för månad och följ upp utfall,
+  trender och avvikelser. Se [`budget/README.md`](budget/README.md) för detaljer.
+
+---
+
 # Fantasy FIFA VM 2026 – Expected Points-modell
 
 Ett verktyg som räknar **förväntade fantasypoäng (xP)** per spelare för officiella
