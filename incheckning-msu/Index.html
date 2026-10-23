@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0c0a;
+  --surface: #1a1512;
+  --surface-2: #231c18;
+  --surface-3: #2d241f;
+  --line: #332a24;
+  --text: #f5efe9;
+  --muted: #a99a8d;
+  --dim: #75685d;
+  --accent: #f2772b;
+  --accent-hi: #ff8c42;
+  --accent-soft: rgba(242, 119, 43, .14);
+  --ok: #5cc28a;
+  --ok-soft: rgba(92, 194, 138, .13);
+  --warn: #f5b940;
+  --warn-soft: rgba(245, 185, 64, .13);
+  --danger: #ef5b4c;
+  --radius: 14px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  background-image: radial-gradient(900px 420px at 15% -10%, rgba(242, 119, 43, .13), transparent 70%),
+    radial-gradient(700px 380px at 100% 0%, rgba(176, 72, 28, .10), transparent 70%);
+  background-attachment: fixed;
+  color: var(--text);
+  font: 15px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
+
+/* Rubrik */
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.leaf { width: 40px; height: 40px; border-radius: 11px; background: var(--accent-soft); display: grid; place-items: center; flex: none; }
+.leaf svg { width: 22px; height: 22px; }
+.overline { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+h1 span { color: var(--accent); }
+.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.live { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); padding: 0 6px; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.live.on i { background: var(--ok); box-shadow: 0 0 0 4px var(--ok-soft); }
+.live.off i { background: var(--danger); }
+
+.btn { border: 1px solid var(--line); background: var(--surface-2); padding: 9px 14px; border-radius: 10px; font-weight: 500; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: background .15s, border-color .15s; }
+.btn:hover { background: var(--surface-3); }
+.btn svg { width: 16px; height: 16px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #1b0d03; font-weight: 600; }
+.btn.primary:hover { background: var(--accent-hi); }
+.btn.big { width: 100%; justify-content: center; padding: 16px; font-size: 17px; border-radius: 12px; }
+.btn.ghost { background: transparent; }
+.btn:disabled { opacity: .5; cursor: default; }
+
+/* Siffror */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.stat .lbl { font-size: 13px; color: var(--muted); font-weight: 500; }
+.stat .num { font-size: 38px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.stat.in .num { color: var(--accent); }
+.progress { margin: 14px 0 6px; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.progress div { height: 100%; width: 0; background: linear-gradient(90deg, #d9561d, var(--accent-hi)); border-radius: 99px; transition: width .4s ease; }
+.scope { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+/* Sök och filter */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-top: 18px; }
+.searchbar { padding: 14px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.search { position: relative; }
+.search svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--dim); }
+.search input { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 15px 44px 15px 46px; font-size: 17px; outline: none; transition: border-color .15s, box-shadow .15s; }
+.search input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.search input::placeholder { color: var(--dim); }
+.clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--muted); padding: 8px; border-radius: 8px; display: none; }
+.clear.show { display: block; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 34px 9px 12px; font-size: 14px; appearance: none; -webkit-appearance: none; outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a99a8d' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; max-width: 100%; }
+select:focus { border-color: var(--accent); }
+select.active { border-color: var(--accent); color: var(--accent-hi); }
+.seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; margin-left: auto; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 7px; font-size: 14px; color: var(--muted); font-weight: 500; }
+.seg button.on { background: var(--surface-3); color: var(--text); }
+.reset { background: none; border: 0; color: var(--accent); font-size: 14px; padding: 6px 4px; }
+
+/* Lista */
+.list { list-style: none; margin: 0; padding: 6px; }
+.row { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 10px; cursor: pointer; }
+.row:hover, .row.kb { background: var(--surface-2); }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-weight: 600; font-size: 14px; color: var(--muted); flex: none; }
+.row.done .avatar { background: var(--ok-soft); color: var(--ok); }
+.who { flex: 1; min-width: 0; }
+.who .n { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who .n mark { background: none; color: var(--accent-hi); }
+.who .m { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.tag.new { background: var(--accent-soft); color: var(--accent-hi); }
+.state { display: flex; align-items: center; gap: 8px; flex: none; }
+.empty { padding: 44px 20px; text-align: center; color: var(--muted); }
+.empty b { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px; }
+.more { padding: 12px; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* Dialoger */
+.overlay { position: fixed; inset: 0; background: rgba(5, 3, 2, .66); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 16px; z-index: 20; animation: fade .15s ease; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; width: 100%; max-width: 460px; max-height: calc(100vh - 32px); overflow: auto; padding: 22px; box-shadow: 0 30px 80px rgba(0, 0, 0, .5); animation: rise .18s ease; }
+.sheet.wide { max-width: 620px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.sheet h2 { margin: 0; font-size: 24px; letter-spacing: -.01em; line-height: 1.2; }
+.sheet h3 { margin: 0; font-size: 18px; }
+.x { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; width: 36px; height: 36px; display: grid; place-items: center; flex: none; }
+.x svg { width: 16px; height: 16px; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
+.fact { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; }
+.fact dt { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 2px; }
+.fact dd { margin: 0; font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.alert { display: flex; gap: 12px; align-items: flex-start; border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 14px; }
+.alert svg { width: 22px; height: 22px; flex: none; margin-top: 1px; }
+.alert b { display: block; font-size: 15px; margin-bottom: 1px; }
+.alert.warn { background: var(--warn-soft); border: 1px solid rgba(245, 185, 64, .35); color: #f7d58c; }
+.alert.warn svg, .alert.warn b { color: var(--warn); }
+.alert.ok { background: var(--ok-soft); border: 1px solid rgba(92, 194, 138, .3); color: #a8dfc0; }
+.alert.ok svg, .alert.ok b { color: var(--ok); }
+.undo-link { margin-top: 10px; text-align: center; }
+.undo-link button { background: none; border: 0; color: var(--muted); text-decoration: underline; font-size: 14px; padding: 8px; }
+
+/* Formulär */
+.field { display: grid; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.field input[type=text], .field input[type=password] { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 16px; outline: none; width: 100%; }
+.field input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.check { display: flex; align-items: center; gap: 10px; margin: 4px 0 18px; font-size: 15px; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.seg.full { margin: 0; display: flex; }
+.seg.full button { flex: 1; padding: 9px; }
+.err { color: var(--danger); font-size: 14px; min-height: 20px; margin: -4px 0 10px; }
+
+/* Statistik */
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.stat-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 11px 10px; border-radius: 10px; cursor: pointer; }
+.stat-row:hover { background: var(--surface-2); }
+.stat-row .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stat-row .ct { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+.stat-row .ct b { color: var(--text); }
+.stat-row .bar { grid-column: 1 / -1; height: 5px; background: var(--surface-3); border-radius: 99px; overflow: hidden; }
+.stat-row .bar div { height: 100%; background: var(--accent); border-radius: 99px; }
+.stat-row.full .bar div { background: var(--ok); }
+
+/* PIN */
+.login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.login .sheet { animation: none; text-align: center; }
+.login .leaf { margin: 0 auto 14px; width: 52px; height: 52px; border-radius: 14px; }
+.login .leaf svg { width: 28px; height: 28px; }
+.login h1 { font-size: 24px; margin-bottom: 4px; }
+.login p { color: var(--muted); margin: 0 0 20px; }
+.login input { text-align: center; letter-spacing: .3em; font-size: 22px !important; }
+.login input::placeholder { letter-spacing: normal; font-size: 17px; }
+.btn:focus-visible, .row:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Notis */
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 12px 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 16px 40px rgba(0, 0, 0, .45); z-index: 30; max-width: calc(100% - 32px); animation: rise .18s ease; }
+.toast.ok { border-color: rgba(92, 194, 138, .4); }
+.toast.bad { border-color: rgba(239, 91, 76, .5); }
+.toast button { background: none; border: 0; color: var(--accent-hi); font-weight: 600; padding: 4px; }
+.loading { padding: 60px 20px; text-align: center; color: var(--muted); }
+.spin { width: 26px; height: 26px; border: 3px solid var(--surface-3); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 12px; animation: spin .8s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.toast { animation-name: toastin; }
+@keyframes toastin { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+@media (max-width: 640px) {
+  .wrap { padding-top: 14px; }
+  h1 { font-size: 19px; }
+  .top-actions .btn span { display: none; }
+  .top-actions .btn { padding: 9px 11px; }
+  .stats { gap: 8px; }
+  .stat { padding: 12px; }
+  .stat .num { font-size: 30px; }
+  .seg:not(.full) { margin-left: 0; width: 100%; }
+  .seg:not(.full) button { flex: 1; }
+  .filters select { flex: 1 1 40%; }
+  .overlay { place-items: end center; padding: 0; }
+  .sheet { border-radius: 20px 20px 0 0; max-height: 92vh; padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
+  .row .state .tag.ok { display: none; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path fill="none" stroke="#f2772b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path fill="none" stroke="#f2772b" stroke-width="2" stroke-linecap="round" d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></g></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></g></symbol>
+</svg>
+
+<!-- PIN -->
+<div id="login" class="login" hidden>
+  <form class="sheet" id="loginForm" autocomplete="off">
+    <div class="leaf"><svg><use href="#i-leaf"/></svg></div>
+    <div class="overline">Moderat Skolungdom (MSU)</div>
+    <h1>Höstkonferens 2026</h1>
+    <p id="loginHello">Incheckning för admin</p>
+    <div class="field">
+      <input type="password" id="pin" inputmode="numeric" placeholder="PIN-kod" aria-label="PIN-kod" autocomplete="off">
+    </div>
+    <div class="err" id="loginErr"></div>
+    <button class="btn primary big" type="submit" id="loginBtn">Logga in</button>
+  </form>
+</div>
+
+<!-- App -->
+<div id="app" class="wrap" hidden>
+  <header class="top">
+    <div class="brand">
+      <div class="leaf"><svg><use href="#i-leaf"/></svg></div>
+      <div>
+        <div class="overline">Moderat Skolungdom (MSU)</div>
+        <h1>Höstkonferens <span>2026</span></h1>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="live" id="live"><i></i><span id="liveText">Ansluter</span></span>
+      <button class="btn" id="btnStats" title="Statistik per distrikt och grupp"><svg><use href="#i-chart"/></svg><span>Statistik</span></button>
+      <button class="btn" id="btnExport" title="Ladda ner hela listan som CSV"><svg><use href="#i-down"/></svg><span>Exportera</span></button>
+      <button class="btn primary" id="btnAdd" title="Lägg till deltagare på plats"><svg><use href="#i-plus"/></svg><span>Lägg till</span></button>
+    </div>
+  </header>
+
+  <section>
+    <div class="stats">
+      <div class="stat in"><div class="lbl">Incheckade</div><div class="num" id="sIn">0</div></div>
+      <div class="stat"><div class="lbl">Saknas</div><div class="num" id="sOut">0</div></div>
+      <div class="stat"><div class="lbl">Totalt</div><div class="num" id="sTot">0</div></div>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="scope"><span id="scope">Alla deltagare</span><span id="pct">0 %</span></div>
+  </section>
+
+  <section class="panel">
+    <div class="searchbar">
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input id="q" type="search" placeholder="Sök på namn" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+        <button class="clear" id="qClear" aria-label="Rensa sökning"><svg width="18" height="18"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="filters">
+        <select id="fDistrikt" aria-label="Filtrera på distrikt"></select>
+        <select id="fGrupp" aria-label="Filtrera på grupp"></select>
+        <button class="reset" id="fReset" hidden>Rensa filter</button>
+        <div class="seg" id="fStatus">
+          <button data-v="alla" class="on">Alla</button>
+          <button data-v="saknas">Saknas</button>
+          <button data-v="in">Incheckade</button>
+        </div>
+      </div>
+    </div>
+    <div id="loading" class="loading"><div class="spin"></div>Hämtar deltagare</div>
+    <ul class="list" id="list"></ul>
+  </section>
+</div>
+
+<div id="modal"></div>
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var VISA_MAX = 300;
+  var INTERVALL = 3000;
+
+  var S = {
+    pin: '',
+    admin: '',
+    deltagare: [],
+    byId: {},
+    version: null,
+    kolumner: { distrikt: true, grupp: true, myndig: true },
+    f: { q: '', distrikt: '', grupp: '', status: 'alla' },
+    vantande: {},
+    skrivningar: 0,
+    hamtar: false,
+    kb: -1,
+    traffar: []
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var lagra = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+
+  function api(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (res, rej) {
+      var r = google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+      r[fn].apply(r, args);
+    });
+  }
+
+  function felText(e) {
+    var m = (e && e.message) || String(e || '');
+    return m.replace(/^Error:\s*/, '').replace(/^Exception:\s*/, '');
+  }
+  function arFelPin(e) { return felText(e).indexOf('FEL_PIN') >= 0; }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function norm(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+  var sv = new Intl.Collator('sv', { sensitivity: 'base', numeric: true });
+
+  function initialer(namn) {
+    var d = namn.split(/\s+/).filter(Boolean);
+    return ((d[0] || '')[0] || '').toUpperCase() + (d.length > 1 ? (d[d.length - 1][0] || '').toUpperCase() : '');
+  }
+  function nuTid() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  // ===== Start =====
+
+  function start() {
+    try {
+      google.script.url.getLocation(function (loc) {
+        var a = loc && loc.parameter && loc.parameter.admin;
+        if (a) {
+          S.admin = String(a).slice(0, 40);
+          $('loginHello').textContent = 'Hej ' + S.admin + ', ange PIN-koden för att börja checka in.';
+        }
+      });
+    } catch (e) {}
+
+    var sparad = lagra.get('msu-hk26-pin');
+    if (sparad) {
+      S.pin = sparad;
+      visaApp();
+      hamta(true);
+    } else {
+      visaLogin();
+    }
+  }
+
+  function visaLogin(fel) {
+    $('app').hidden = true;
+    $('login').hidden = false;
+    $('loginErr').textContent = fel || '';
+    setTimeout(function () { $('pin').focus(); }, 50);
+  }
+
+  function visaApp() {
+    $('login').hidden = true;
+    $('app').hidden = false;
+    setTimeout(function () { $('q').focus(); }, 50);
+  }
+
+  $('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pin = $('pin').value.trim();
+    if (!pin) return;
+    $('loginBtn').disabled = true;
+    $('loginErr').textContent = '';
+    api('hamtaData', pin, null).then(function (data) {
+      S.pin = pin;
+      lagra.set('msu-hk26-pin', pin);
+      $('loginBtn').disabled = false;
+      $('pin').value = '';
+      visaApp();
+      tillampa(data);
+    }).catch(function (err) {
+      $('loginBtn').disabled = false;
+      $('loginErr').textContent = arFelPin(err) ? 'Fel PIN-kod. Försök igen.' : felText(err);
+      $('pin').select();
+    });
+  });
+
+  // ===== Data =====
+
+  function hamta(full) {
+    if (S.hamtar) return;
+    S.hamtar = true;
+    var fore = S.skrivningar;
+    api('hamtaData', S.pin, full ? null : S.version).then(function (data) {
+      S.hamtar = false;
+      live(true);
+      if (fore !== S.skrivningar) return; // en skrivning hann bli klar under tiden, dess svar är nyare
+      tillampa(data);
+    }).catch(function (err) {
+      S.hamtar = false;
+      if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
+      live(false);
+      if (!S.deltagare.length) {
+        $('loading').innerHTML = '<b>Kunde inte hämta listan</b><br>' + esc(felText(err));
+      }
+    });
+  }
+
+  function tillampa(data) {
+    if (!data || !data.andrad) return;
+    S.version = data.version;
+    S.kolumner = data.kolumner || S.kolumner;
+    S.deltagare = data.deltagare || [];
+    S.byId = {};
+    S.deltagare.forEach(function (p) {
+      p._n = norm(p.namn);
+      var v = S.vantande[p.id];
+      if (v) { p.in = v.in; p.tid = v.tid; }
+      S.byId[p.id] = p;
+    });
+    S.deltagare.sort(function (a, b) { return sv.compare(a.namn, b.namn); });
+    $('loading').hidden = true;
+    byggFilter();
+    rita();
+    if (oppetId && S.byId[oppetId]) visaPerson(oppetId, true);
+  }
+
+  function live(ok) {
+    $('live').className = 'live ' + (ok ? 'on' : 'off');
+    $('liveText').textContent = ok ? 'Live' : 'Ingen anslutning';
+  }
+
+  function loggaUt(msg) {
+    lagra.del('msu-hk26-pin');
+    S.pin = '';
+    stang();
+    visaLogin(msg);
+  }
+
+  setInterval(function () {
+    if (!S.pin || document.hidden) return;
+    hamta(false);
+  }, INTERVALL);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && S.pin) hamta(false);
+  });
+
+  // ===== Skrivningar =====
+
+  function andra(id, inne) {
+    var p = S.byId[id];
+    if (!p) return;
+    var fore = { in: p.in, tid: p.tid };
+    p.in = inne;
+    p.tid = inne ? (p.tid || nuTid()) : '';
+    S.vantande[id] = { in: p.in, tid: p.tid };
+    rita();
+    api(inne ? 'checkaIn' : 'angra', S.pin, id).then(function (data) {
+      delete S.vantande[id];
+      S.skrivningar++;
+      tillampa(data);
+    }).catch(function (err) {
+      delete S.vantande[id];
+      if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
+      var q = S.byId[id];
+      if (q) { q.in = fore.in; q.tid = fore.tid; }
+      rita();
+      if (oppetId === id) visaPerson(id, true);
+      notis('Det gick inte att spara: ' + felText(err), 'bad');
+    });
+  }
+
+  function checkaIn(id) {
+    var p = S.byId[id];
+    if (!p) return;
+    andra(id, true);
+    stang();
+    notis(p.namn + ' är incheckad', 'ok', 'Ångra', function () { andra(id, false); });
+    $('q').value = '';
+    S.f.q = '';
+    rita();
+    $('q').focus();
+  }
+
+  // ===== Filter och lista =====
+
+  function unika(nyckel) {
+    var set = {};
+    S.deltagare.forEach(function (p) { if (p[nyckel]) set[p[nyckel]] = 1; });
+    return Object.keys(set).sort(sv.compare);
+  }
+
+  function byggFilter() {
+    [['distrikt', 'fDistrikt', 'Alla distrikt'], ['grupp', 'fGrupp', 'Alla grupper']].forEach(function (x) {
+      var el = $(x[1]);
+      var lista = unika(x[0]);
+      el.hidden = !S.kolumner[x[0]] || !lista.length;
+      if (S.f[x[0]] && lista.indexOf(S.f[x[0]]) < 0) S.f[x[0]] = '';
+      var html = '<option value="">' + x[2] + '</option>' + lista.map(function (v) {
+        return '<option value="' + esc(v) + '">' + esc(x[0] === 'grupp' && /^\d+$/.test(v) ? 'Grupp ' + v : v) + '</option>';
+      }).join('');
+      if (el._html !== html) { el.innerHTML = html; el._html = html; }
+      el.value = S.f[x[0]];
+      el.classList.toggle('active', !!S.f[x[0]]);
+    });
+    $('fReset').hidden = !(S.f.distrikt || S.f.grupp);
+  }
+
+  function iUrval(p) {
+    return (!S.f.distrikt || p.distrikt === S.f.distrikt) && (!S.f.grupp || p.grupp === S.f.grupp);
+  }
+
+  function markera(namn, ord) {
+    if (!ord.length) return esc(namn);
+    var n = norm(namn);
+    var traff = new Array(namn.length).fill(false);
+    ord.forEach(function (o) {
+      var i = n.indexOf(o);
+      while (i >= 0) { for (var k = i; k < i + o.length; k++) traff[k] = true; i = n.indexOf(o, i + 1); }
+    });
+    var ut = '', oppen = false;
+    for (var i = 0; i < namn.length; i++) {
+      if (traff[i] && !oppen) { ut += '<mark>'; oppen = true; }
+      if (!traff[i] && oppen) { ut += '</mark>'; oppen = false; }
+      ut += esc(namn[i]);
+    }
+    return ut + (oppen ? '</mark>' : '');
+  }
+
+  function grupptext(g) { return /^\d+$/.test(g) ? 'Grupp ' + g : g; }
+
+  function rita() {
+    var urval = S.deltagare.filter(iUrval);
+    var inne = urval.filter(function (p) { return p.in; }).length;
+    var tot = urval.length;
+    $('sIn').textContent = inne;
+    $('sOut').textContent = tot - inne;
+    $('sTot').textContent = tot;
+    var pct = tot ? Math.round(inne / tot * 100) : 0;
+    $('bar').style.width = pct + '%';
+    $('pct').textContent = pct + ' % incheckade';
+    var delar = [];
+    if (S.f.distrikt) delar.push(S.f.distrikt);
+    if (S.f.grupp) delar.push(grupptext(S.f.grupp));
+    $('scope').textContent = delar.length ? 'Visar ' + delar.join(' · ') : 'Alla deltagare';
+
+    var ord = norm(S.f.q).split(/\s+/).filter(Boolean);
+    var traffar = urval.filter(function (p) {
+      if (S.f.status === 'saknas' && p.in) return false;
+      if (S.f.status === 'in' && !p.in) return false;
+      return ord.every(function (o) { return p._n.indexOf(o) >= 0; });
+    });
+    if (ord.length) {
+      // Namn som börjar på söktexten först
+      traffar.sort(function (a, b) {
+        var sa = a._n.indexOf(ord[0]) === 0 || a._n.indexOf(' ' + ord[0]) >= 0 ? 0 : 1;
+        var sb = b._n.indexOf(ord[0]) === 0 || b._n.indexOf(' ' + ord[0]) >= 0 ? 0 : 1;
+        return sa - sb || sv.compare(a.namn, b.namn);
+      });
+    }
+    S.traffar = traffar;
+    if (S.kb >= traffar.length) S.kb = traffar.length - 1;
+    if (ord.length && traffar.length === 1) S.kb = 0;
+
+    $('qClear').classList.toggle('show', !!S.f.q);
+
+    var list = $('list');
+    if (!traffar.length) {
+      var tom = S.f.q
+        ? '<b>Ingen träff på "' + esc(S.f.q) + '"</b>Kontrollera stavningen eller lägg till personen på plats.'
+        : (S.f.status === 'saknas' ? '<b>Alla är incheckade</b>Snyggt jobbat.' : '<b>Inga deltagare här</b>Ändra filtret.');
+      list.innerHTML = '<li class="empty">' + tom + '</li>';
+      return;
+    }
+    var html = traffar.slice(0, VISA_MAX).map(function (p, i) {
+      var meta = [p.distrikt, p.grupp ? grupptext(p.grupp) : ''].filter(Boolean).join(' · ');
+      var taggar = '';
+      if (p.myndig === false) taggar += '<span class="tag warn">Under 18</span>';
+      if (p.plats) taggar += '<span class="tag new">Tillagd</span>';
+      var status = p.in
+        ? '<span class="tag ok"><svg width="12" height="12"><use href="#i-check"/></svg>' + esc(p.tid || 'Incheckad') + '</span>'
+        : '';
+      return '<li class="row' + (p.in ? ' done' : '') + (i === S.kb ? ' kb' : '') + '" data-id="' + esc(p.id) + '">' +
+        '<div class="avatar">' + (p.in ? '<svg width="18" height="18"><use href="#i-check"/></svg>' : esc(initialer(p.namn))) + '</div>' +
+        '<div class="who"><div class="n">' + markera(p.namn, ord) + '</div><div class="m">' + esc(meta || ' ') + '</div></div>' +
+        '<div class="state">' + taggar + status + '</div></li>';
+    }).join('');
+    if (traffar.length > VISA_MAX) {
+      html += '<li class="more">Visar ' + VISA_MAX + ' av ' + traffar.length + '. Sök eller filtrera för att se fler.</li>';
+    }
+    list.innerHTML = html;
+  }
+
+  $('list').addEventListener('click', function (e) {
+    var row = e.target.closest('.row');
+    if (row) visaPerson(row.getAttribute('data-id'));
+  });
+
+  $('q').addEventListener('input', function () {
+    S.f.q = this.value;
+    S.kb = -1;
+    rita();
+  });
+  $('q').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var p = S.traffar[S.kb >= 0 ? S.kb : 0];
+      if (p && (S.kb >= 0 || S.traffar.length === 1)) visaPerson(p.id);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      var max = Math.min(S.traffar.length, VISA_MAX) - 1;
+      S.kb = Math.max(0, Math.min(max, S.kb + (e.key === 'ArrowDown' ? 1 : -1)));
+      rita();
+      var el = document.querySelector('.row.kb');
+      if (el) el.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Escape') {
+      this.value = ''; S.f.q = ''; rita();
+    }
+  });
+  $('qClear').addEventListener('click', function () {
+    $('q').value = ''; S.f.q = ''; rita(); $('q').focus();
+  });
+  $('fDistrikt').addEventListener('change', function () { S.f.distrikt = this.value; byggFilter(); rita(); });
+  $('fGrupp').addEventListener('change', function () { S.f.grupp = this.value; byggFilter(); rita(); });
+  $('fReset').addEventListener('click', function () { S.f.distrikt = ''; S.f.grupp = ''; byggFilter(); rita(); });
+  $('fStatus').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    S.f.status = b.getAttribute('data-v');
+    Array.prototype.forEach.call(this.children, function (c) { c.classList.toggle('on', c === b); });
+    rita();
+  });
+
+  // ===== Dialoger =====
+
+  var oppetId = null;
+  var X = '<button class="x" data-close aria-label="Stäng"><svg><use href="#i-x"/></svg></button>';
+
+  function oppna(html, wide) {
+    $('modal').innerHTML = '<div class="overlay"><div class="sheet' + (wide ? ' wide' : '') + '" role="dialog" aria-modal="true">' + html + '</div></div>';
+  }
+  function stang() {
+    oppetId = null;
+    $('modal').innerHTML = '';
+  }
+  $('modal').addEventListener('click', function (e) {
+    if (e.target.classList.contains('overlay') || e.target.closest('[data-close]')) {
+      stang();
+      $('q').focus();
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && $('modal').innerHTML) { stang(); $('q').focus(); }
+  });
+
+  function visaPerson(id, uppdatera) {
+    var p = S.byId[id];
+    if (!p) { stang(); return; }
+    if (uppdatera && oppetId !== id) return;
+    oppetId = id;
+    var fakta = '';
+    if (S.kolumner.distrikt) fakta += '<div class="fact"><dt>Distrikt</dt><dd>' + esc(p.distrikt || '–') + '</dd></div>';
+    if (S.kolumner.grupp) fakta += '<div class="fact"><dt>Grupp</dt><dd>' + esc(p.grupp ? grupptext(p.grupp) : '–') + '</dd></div>';
+    if (S.kolumner.myndig) {
+      var mt = p.myndig === true ? 'Ja' : p.myndig === false ? 'Nej' : (p.myndigText || 'Okänt');
+      if (p.myndigText && p.myndig != null && !/^(ja|nej|x)$/i.test(p.myndigText)) mt += ' (' + p.myndigText + ')';
+      fakta += '<div class="fact"><dt>Myndig</dt><dd>' + esc(mt) + '</dd></div>';
+    }
+    fakta += '<div class="fact"><dt>Status</dt><dd>' + (p.in ? 'Incheckad ' + esc(p.tid) : 'Ej incheckad') + '</dd></div>';
+
+    var varning = p.myndig === false
+      ? '<div class="alert warn"><svg><use href="#i-warn"/></svg><div><b>Under 18 år</b>Omyndig deltagare. Följ rutinen för minderåriga.</div></div>'
+      : '';
+    var status = p.in
+      ? '<div class="alert ok"><svg><use href="#i-check"/></svg><div><b>Incheckad ' + esc(p.tid) + '</b>Personen är redan registrerad på plats.</div></div>'
+      : '';
+    var knapp = p.in
+      ? '<button class="btn big" id="mAngra">Ångra incheckning</button>'
+      : '<button class="btn primary big" id="mIn"><svg width="20" height="20"><use href="#i-check"/></svg>Checka in</button>';
+
+    oppna(
+      '<div class="sheet-head"><div>' + (p.plats ? '<span class="tag new" style="margin-bottom:8px">Tillagd på plats</span>' : '') +
+      '<h2>' + esc(p.namn) + '</h2></div>' + X + '</div>' +
+      varning + status + '<dl class="facts">' + fakta + '</dl>' + knapp
+    );
+    var bIn = $('mIn');
+    if (bIn) { bIn.addEventListener('click', function () { checkaIn(id); }); bIn.focus(); }
+    var bA = $('mAngra');
+    if (bA) bA.addEventListener('click', function () {
+      andra(id, false);
+      notis(p.namn + ' är inte längre incheckad', '');
+      visaPerson(id, true);
+    });
+  }
+
+  // Statistik
+  var statFlik = 'distrikt';
+  function visaStatistik() {
+    var harGrupp = S.kolumner.grupp && unika('grupp').length;
+    var harDistr = S.kolumner.distrikt && unika('distrikt').length;
+    if (!harDistr && harGrupp) statFlik = 'grupp';
+    var nyckel = statFlik;
+    var m = {};
+    S.deltagare.forEach(function (p) {
+      var k = p[nyckel] || '(saknas)';
+      m[k] = m[k] || { tot: 0, in: 0 };
+      m[k].tot++;
+      if (p.in) m[k].in++;
+    });
+    var rader = Object.keys(m).sort(sv.compare).map(function (k) {
+      var r = m[k];
+      var pct = r.tot ? Math.round(r.in / r.tot * 100) : 0;
+      return '<div class="stat-row' + (r.in === r.tot ? ' full' : '') + '" data-k="' + esc(k) + '">' +
+        '<div class="nm">' + esc(nyckel === 'grupp' ? grupptext(k) : k) + '</div>' +
+        '<div class="ct"><b>' + r.in + '</b> / ' + r.tot + (r.tot - r.in ? ' · ' + (r.tot - r.in) + ' saknas' : ' · klart') + '</div>' +
+        '<div class="bar"><div style="width:' + pct + '%"></div></div></div>';
+    }).join('');
+    var flikar = (harDistr && harGrupp)
+      ? '<div class="seg full tabs" id="sTabs"><button data-v="distrikt" class="' + (nyckel === 'distrikt' ? 'on' : '') + '">Per distrikt</button>' +
+        '<button data-v="grupp" class="' + (nyckel === 'grupp' ? 'on' : '') + '">Per grupp</button></div>'
+      : '';
+    oppna('<div class="sheet-head"><div><h3>Statistik</h3><div class="scope">Klicka på en rad för att filtrera listan</div></div>' + X + '</div>' +
+      flikar + '<div id="sRows">' + (rader || '<div class="empty">Ingen data</div>') + '</div>', true);
+    var t = $('sTabs');
+    if (t) t.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (b) { statFlik = b.getAttribute('data-v'); visaStatistik(); }
+    });
+    $('sRows').addEventListener('click', function (e) {
+      var r = e.target.closest('.stat-row');
+      if (!r) return;
+      var k = r.getAttribute('data-k');
+      S.f[nyckel] = k === '(saknas)' ? '' : k;
+      byggFilter(); rita(); stang();
+    });
+  }
+  $('btnStats').addEventListener('click', visaStatistik);
+
+  // Lägg till
+  function visaLaggTill() {
+    var dl = function (id, lista) {
+      return '<datalist id="' + id + '">' + lista.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
+    };
+    var html = '<div class="sheet-head"><div><h3>Lägg till deltagare</h3><div class="scope">För personer som saknas i listan</div></div>' + X + '</div>' +
+      '<form id="addForm" autocomplete="off">' +
+      '<div class="field"><label for="aNamn">Namn</label><input type="text" id="aNamn" required></div>';
+    if (S.kolumner.distrikt) html += '<div class="field"><label for="aDistr">Distrikt</label><input type="text" id="aDistr" list="dlD" value="' + esc(S.f.distrikt) + '">' + dl('dlD', unika('distrikt')) + '</div>';
+    if (S.kolumner.grupp) html += '<div class="field"><label for="aGrupp">Grupp</label><input type="text" id="aGrupp" list="dlG" value="' + esc(S.f.grupp) + '">' + dl('dlG', unika('grupp')) + '</div>';
+    if (S.kolumner.myndig) html += '<div class="field"><label>Myndig (18 år eller äldre)</label><div class="seg full" id="aMyndig">' +
+      '<button type="button" data-v="ja">Ja</button><button type="button" data-v="nej">Nej</button><button type="button" data-v="" class="on">Vet ej</button></div></div>';
+    html += '<label class="check"><input type="checkbox" id="aIn" checked> Checka in direkt</label>' +
+      '<div class="err" id="aErr"></div>' +
+      '<button class="btn primary big" type="submit" id="aBtn">Lägg till</button></form>';
+    oppna(html);
+    var namn = $('aNamn');
+    namn.value = S.f.q;
+    namn.focus();
+    var myndig = '';
+    var seg = $('aMyndig');
+    if (seg) seg.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      myndig = b.getAttribute('data-v');
+      Array.prototype.forEach.call(seg.children, function (c) { c.classList.toggle('on', c === b); });
+    });
+    $('addForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var d = {
+        namn: namn.value.trim(),
+        distrikt: $('aDistr') ? $('aDistr').value.trim() : '',
+        grupp: $('aGrupp') ? $('aGrupp').value.trim() : '',
+        myndig: myndig === 'ja' ? true : myndig === 'nej' ? false : null,
+        checkaIn: $('aIn').checked
+      };
+      if (!d.namn) { $('aErr').textContent = 'Skriv ett namn.'; return; }
+      $('aBtn').disabled = true;
+      api('laggTill', S.pin, d).then(function (data) {
+        S.skrivningar++;
+        stang();
+        $('q').value = ''; S.f.q = '';
+        tillampa(data);
+        notis(d.namn + (d.checkaIn ? ' är tillagd och incheckad' : ' är tillagd'), 'ok');
+        $('q').focus();
+      }).catch(function (err) {
+        if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
+        $('aBtn').disabled = false;
+        $('aErr').textContent = felText(err);
+      });
+    });
+  }
+  $('btnAdd').addEventListener('click', visaLaggTill);
+
+  // Export
+  $('btnExport').addEventListener('click', function () {
+    var cell = function (v) {
+      v = String(v == null ? '' : v);
+      return /[";\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    };
+    var rader = [['Namn', 'Distrikt', 'Grupp', 'Myndig', 'Status', 'Incheckad tid', 'Tillagd på plats']];
+    S.deltagare.forEach(function (p) {
+      rader.push([p.namn, p.distrikt, p.grupp, p.myndig === true ? 'Ja' : p.myndig === false ? 'Nej' : '',
+        p.in ? 'Incheckad' : 'Saknas', p.tid, p.plats ? 'Ja' : '']);
+    });
+    var csv = '﻿' + rader.map(function (r) { return r.map(cell).join(';'); }).join('\r\n');
+    var d = new Date();
+    var namn = 'MSU-Hostkonferens-2026-incheckning-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0') + '.csv';
+    try {
+      var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      var a = document.createElement('a');
+      a.href = url; a.download = namn;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      notis('Listan är nedladdad (' + S.deltagare.length + ' deltagare)', 'ok');
+    } catch (e) {
+      window.open('data:text/csv;charset=utf-8,' + encodeURIComponent(csv), '_blank');
+    }
+  });
+
+  // Notiser
+  var toastTimer;
+  function notis(text, typ, knappText, knappFn) {
+    clearTimeout(toastTimer);
+    $('toast').innerHTML = '<div class="toast ' + (typ || '') + '"><span>' + esc(text) + '</span>' +
+      (knappText ? '<button id="tBtn">' + esc(knappText) + '</button>' : '') + '</div>';
+    if (knappText) $('tBtn').addEventListener('click', function () { $('toast').innerHTML = ''; knappFn(); });
+    toastTimer = setTimeout(function () { $('toast').innerHTML = ''; }, knappText ? 6000 : 3500);
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
