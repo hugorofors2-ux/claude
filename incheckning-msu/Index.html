@@ -815,10 +815,11 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
       v = String(v == null ? '' : v);
       return /[";\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
     };
-    var rader = [['Namn', 'Distrikt', 'Grupp', 'Myndig', 'Status', 'Incheckad tid', 'Tillagd på plats']];
+    var grupp = S.kolumner.grupp;
+    var rader = [['Namn', 'Distrikt'].concat(grupp ? ['Grupp'] : [], ['Myndig', 'Status', 'Incheckad tid', 'Tillagd på plats'])];
     S.deltagare.forEach(function (p) {
-      rader.push([p.namn, p.distrikt, p.grupp, p.myndig === true ? 'Ja' : p.myndig === false ? 'Nej' : '',
-        p.in ? 'Incheckad' : 'Saknas', p.tid, p.plats ? 'Ja' : '']);
+      rader.push([p.namn, p.distrikt].concat(grupp ? [p.grupp] : [], [p.myndig === true ? 'Ja' : p.myndig === false ? 'Nej' : '',
+        p.in ? 'Incheckad' : 'Saknas', p.tid, p.plats ? 'Ja' : '']));
     });
     var csv = '﻿' + rader.map(function (r) { return r.map(cell).join(';'); }).join('\r\n');
     var d = new Date();

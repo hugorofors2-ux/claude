@@ -17,6 +17,9 @@ const FLIK = '';
 // Används när filen anger ålder via födelsedatum, födelseår eller personnummer.
 const EVENEMANGSDATUM = new Date(2026, 9, 24);
 
+// Grupp används inte på HK26. Sätt till true för att visa och filtrera på grupp.
+const VISA_GRUPP = false;
+
 const TIDSZON = 'Europe/Stockholm';
 const TITEL = 'MSU Höstkonferens 2026';
 
@@ -139,7 +142,9 @@ function oppna() {
   if (!sh) throw new Error('Hittar inte fliken "' + FLIK + '".');
   const varden = sh.getDataRange().getValues();
   const hr = hittaRubrikrad(varden);
-  return { sh, varden, hr, kol: kartlagg(varden[hr] || []) };
+  const kol = kartlagg(varden[hr] || []);
+  if (!VISA_GRUPP) delete kol.grupp;
+  return { sh, varden, hr, kol };
 }
 
 function forberett() {
