@@ -4,6 +4,8 @@
  * Serverdel för Google Apps Script. Skriptet ska vara kopplat till det
  * kalkylark som innehåller deltagarlistan (Tillägg > Apps Script).
  * Se INSTRUKTION.md för publicering.
+ *
+ * @OnlyCurrentDoc
  */
 
 // ===== Inställningar =====
@@ -246,7 +248,7 @@ function paket(ctx) {
       distrikt: k.distrikt != null ? text(rad[k.distrikt]) : '',
       grupp: k.grupp != null ? text(rad[k.grupp]) : '',
       myndig: tolkaMyndig(ra),
-      myndigText: visaVarde(ra),
+      myndigText: alderText(ra),
       in: arJa(rad[k.incheckad]),
       tid: arJa(rad[k.incheckad]) ? tidText(rad[k.tid]) : '',
       plats: arJa(rad[k.plats])
@@ -332,9 +334,10 @@ function tidText(v) {
   return m ? m[1] : text(v);
 }
 
-function visaVarde(v) {
-  if (v instanceof Date) return Utilities.formatDate(v, TIDSZON, 'yyyy-MM-dd');
-  return text(v);
+// Skickar bara ut en ren ålder till gränssnittet, aldrig personnummer eller födelsedatum.
+function alderText(v) {
+  const s = text(v);
+  return /^\d{1,2}$/.test(s) ? s + ' år' : '';
 }
 
 function text(v) {

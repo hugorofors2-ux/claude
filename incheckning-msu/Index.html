@@ -66,6 +66,7 @@ h1 span { color: var(--accent); }
 .btn.big { width: 100%; justify-content: center; padding: 16px; font-size: 17px; border-radius: 12px; }
 .btn.ghost { background: transparent; }
 .btn:disabled { opacity: .5; cursor: default; }
+.only-mob { display: none; }
 
 /* Siffror */
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -191,6 +192,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
   .wrap { padding-top: 14px; }
   h1 { font-size: 19px; }
   .top-actions .btn span { display: none; }
+  .top-actions .only-mob { display: block; }
   .top-actions .btn { padding: 9px 11px; }
   .stats { gap: 8px; }
   .stat { padding: 12px; }
@@ -247,6 +249,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
       <button class="btn" id="btnStats" title="Statistik per distrikt och grupp"><svg><use href="#i-chart"/></svg><span>Statistik</span></button>
       <button class="btn" id="btnExport" title="Ladda ner hela listan som CSV"><svg><use href="#i-down"/></svg><span>Exportera</span></button>
       <button class="btn primary" id="btnAdd" title="Lägg till deltagare på plats"><svg><use href="#i-plus"/></svg><span>Lägg till</span></button>
+      <button class="btn ghost" id="btnLogout" title="Logga ut från den här enheten"><span>Logga ut</span><svg class="only-mob"><use href="#i-x"/></svg></button>
     </div>
   </header>
 
@@ -681,8 +684,8 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
     if (S.kolumner.distrikt) fakta += '<div class="fact"><dt>Distrikt</dt><dd>' + esc(p.distrikt || '–') + '</dd></div>';
     if (S.kolumner.grupp) fakta += '<div class="fact"><dt>Grupp</dt><dd>' + esc(p.grupp ? grupptext(p.grupp) : '–') + '</dd></div>';
     if (S.kolumner.myndig) {
-      var mt = p.myndig === true ? 'Ja' : p.myndig === false ? 'Nej' : (p.myndigText || 'Okänt');
-      if (p.myndigText && p.myndig != null && !/^(ja|nej|x)$/i.test(p.myndigText)) mt += ' (' + p.myndigText + ')';
+      var mt = p.myndig === true ? 'Ja' : p.myndig === false ? 'Nej' : 'Okänt';
+      if (p.myndigText && p.myndig != null && /år$/.test(p.myndigText)) mt += ' (' + p.myndigText + ')';
       fakta += '<div class="fact"><dt>Myndig</dt><dd>' + esc(mt) + '</dd></div>';
     }
     fakta += '<div class="fact"><dt>Status</dt><dd>' + (p.in ? 'Incheckad ' + esc(p.tid) : 'Ej incheckad') + '</dd></div>';
@@ -808,6 +811,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
     });
   }
   $('btnAdd').addEventListener('click', visaLaggTill);
+  $('btnLogout').addEventListener('click', function () { loggaUt('Du är utloggad.'); });
 
   // Export
   $('btnExport').addEventListener('click', function () {
