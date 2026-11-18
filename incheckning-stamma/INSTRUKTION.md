@@ -6,11 +6,16 @@ Samma upplägg som incheckningen för HK26, men en egen kopia med egen länk och
 
 | Flik | Används till |
 |---|---|
-| `Ombud` | **Facit.** Distrikt, antal mandat och namn i turordning. De första namnen (lika många som mandaten) är ombud, resten ersättare 1, 2, 3 ... |
-| `Röstlängd` | FS-ledamöterna (rader med distrikt `FS`). Ombuden här kontrolleras mot fliken Ombud. |
+| `Röstlängd` | **Facit.** En rad per ombud. Ersättarna står i turordning från kolumnen *Ersättare* och åt höger, på distriktets rader. Rader med distrikt `FS` är förbundsstyrelsen. |
+| `Ombud` | **Kontroll.** Jämförs med Röstlängd. Avvikelser visas under Kontroll men påverkar inte röstlängden. |
 | `Anmälan` | Alla anmälda. Dubbletter på för- och efternamn slås ihop. Personer som inte står i ombudslistan får rollen från kolumnen *Deltar som*. |
 | `Incheckning` | Skapas av systemet. Här sparas vem som är på plats och när. |
 | `Röstlängd 1 kl 10.30` m.fl. | Skapas när ni fastställer en röstlängd. |
+
+Vill ni byta facit till fliken Ombud: ändra `FACIT` överst i Code.gs.
+
+Namn i anmälan kopplas till listan även om stavningen skiljer sig något (t.ex. "Kiam Dahlstrand" och
+"Kiam Dalstrand"). Varje sådan koppling visas under Kontroll så att ni kan dubbelkolla.
 
 Systemet ändrar aldrig flikarna Ombud, Röstlängd och Anmälan. Anteckningar inom parentes i
 ombudslistan, t.ex. `Neo Sahlin (medlem i MUF örebro?)`, tas bort från namnet och visas under Kontroll.
@@ -33,6 +38,7 @@ Personnummer, e-post och telefon läses aldrig in i appen.
 
 | Inställning | Standard | Betyder |
 |---|---|---|
+| `FACIT` | `'Röstlängd'` | Vilken flik som styr ombud och ersättarordning. |
 | `FS_ROSTRATT` | `true` | FS-ledamöter räknas i röstlängden. |
 | `DUBBELROLL_RAKNAS_SOM` | `'FS'` | Står någon både som FS och ombud räknas hen som FS, och nästa ersättare i distriktet träder in. |
 | `UTDELNING` | | Texten "Lämna ut" på personkortet, per roll. |

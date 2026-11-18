@@ -839,7 +839,8 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
         return (medNr && p && p.ersNr ? 'Ers ' + p.ersNr + ' ' : '') + namnLank(id);
       }).join(', ');
     };
-    var kort = d.distrikt.filter(function (x) { return !baraLuckor || x.saknas.length; }).map(function (x) {
+    var valt = d.distrikt.some(function (x) { return x.namn === S.f.distrikt; }) ? S.f.distrikt : '';
+    var kort = d.distrikt.filter(function (x) { return (!valt || x.namn === valt) && (!baraLuckor || x.saknas.length); }).map(function (x) {
       var fylld = x.ombudInne + x.tjanstgor.length;
       var seats = '';
       for (var i = 0; i < x.mandat; i++) seats += '<i class="seat' + (i < x.ombudInne ? ' o' : i < fylld ? ' e' : '') + '"></i>';
@@ -860,15 +861,17 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
     }).join('');
     var fsInne = d.fs.ids.filter(function (id) { return S.byId[id] && S.byId[id].status === 'inne'; });
     var fsSaknas = d.fs.ids.filter(function (id) { return fsInne.indexOf(id) < 0; });
-    var fsKort = d.fs.ids.length && !baraLuckor
+    var fsKort = d.fs.ids.length && !baraLuckor && (!S.f.distrikt || S.f.distrikt === 'FS')
       ? '<div class="dcard"><div class="dhead"><b>FS</b><span class="dnum"><strong>' + fsInne.length + '</strong> / ' + d.fs.ids.length + ' på plats' + (d.fs.rostratt ? '' : ' · ej rösträtt') + '</span></div>' +
         (fsSaknas.length ? '<div class="dline"><span class="l">Saknas:</span> ' + namnLista(fsSaknas) + '</div>' : '') + '</div>'
       : '';
     oppna('<div class="sheet-head"><div><h3>Distrikt och mandat</h3><div class="scope">Ersättare träder in i turordning när ombud saknas. Beslutsstöd, justera manuellt vid behov.</div></div>' + X + '</div>' +
       '<div class="legend"><span><i style="background:var(--accent)"></i>Ombud på plats</span><span><i style="background:var(--info)"></i>Ersättare tjänstgör</span><span><i style="background:var(--surface-3)"></i>Tom plats</span></div>' +
-      '<label class="check"><input type="checkbox" id="dLuckor"' + (baraLuckor ? ' checked' : '') + '> Visa bara distrikt där ombud saknas</label>' +
+      (valt ? '<p class="hint" style="margin:0 0 12px">Visar ' + esc(valt) + '. <button class="link acc" id="dAlla">Visa alla distrikt</button></p>'
+        : '<label class="check"><input type="checkbox" id="dLuckor"' + (baraLuckor ? ' checked' : '') + '> Visa bara distrikt där ombud saknas</label>') +
       '<div class="dlist">' + (kort || '<div class="empty"><b>Alla ombud är på plats</b></div>') + fsKort + '</div>', true);
-    $('dLuckor').addEventListener('change', function () { baraLuckor = this.checked; visaDistrikt(); });
+    if ($('dLuckor')) $('dLuckor').addEventListener('change', function () { baraLuckor = this.checked; visaDistrikt(); });
+    if ($('dAlla')) $('dAlla').addEventListener('click', function () { S.f.distrikt = ''; byggFilter(); rita(); visaDistrikt(); });
   }
   $('btnDistrikt').addEventListener('click', visaDistrikt);
 
@@ -980,7 +983,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
           return '<div class="kitem' + (kan ? ' click" data-person="' + esc(x.id) : '') + '">' + esc(x.text) + '</div>';
         }).join('') + '</div>';
     }).join('');
-    oppna('<div class="sheet-head"><div><h3>Kontroll mot ombudslistan</h3><div class="scope">Ombudsfliken är facit. Rätta i kalkylarket, så uppdateras listan här.</div></div>' + X + '</div>' +
+    oppna('<div class="sheet-head"><div><h3>Kontroll mot ombudslistan</h3><div class="scope">Fliken ' + esc(S.d.facit || 'Röstlängd') + ' är facit. Rätta i kalkylarket, så uppdateras listan här.</div></div>' + X + '</div>' +
       (html || '<div class="empty"><b>Allt stämmer</b>Inga avvikelser hittades.</div>'), true);
   }
   $('btnKontroll').addEventListener('click', visaKontroll);

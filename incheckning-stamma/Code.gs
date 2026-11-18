@@ -4,7 +4,7 @@
  * Serverdel för Google Apps Script, kopplad till kalkylarket med flikarna
  * Ombud, Röstlängd och Anmälan. Se INSTRUKTION.md.
  *
- * Ombudsfliken är facit: den avgör mandat, ombud och ersättarordning.
+ * Röstlängdsfliken är facit (se FACIT): den avgör mandat, ombud och ersättarordning.
  * Skriptet ändrar aldrig era flikar. Incheckningar sparas i en egen flik
  * och varje fastställd röstlängd blir en ny flik.
  *
@@ -21,6 +21,10 @@ const FLIK_OMBUD = 'Ombud';
 const FLIK_ROSTLANGD = 'Röstlängd';
 const FLIK_ANMALAN = 'Anmälan';
 const FLIK_INCHECKNING = 'Incheckning';
+
+// Vilken flik som är facit för ombud och ersättarordning: 'Röstlängd' eller 'Ombud'.
+// Den andra fliken används som kontroll och avvikelser visas under Kontroll.
+const FACIT = 'Röstlängd';
 
 // FS-ledamöter i röstlängdsfliken räknas som röstberättigade.
 const FS_ROSTRATT = true;
@@ -165,8 +169,12 @@ function faststallRostlangd(pin) {
 // ===== Modell =====
 
 function bygg(ss) {
-  const ombud = lasOmbud(ss);
-  const rl = lasRostlangdsflik(ss);
+  const rl = lasRostlangdsflik(ss, FACIT !== 'Ombud');
+  const om = lasOmbud(ss, FACIT === 'Ombud');
+  const ombud = FACIT === 'Ombud' ? om : rl.distrikt;
+  const jamforMed = FACIT === 'Ombud' ? rl.distrikt : om;
+  const facitFlik = FACIT === 'Ombud' ? FLIK_OMBUD : FLIK_ROSTLANGD;
+  const jamforFlik = FACIT === 'Ombud' ? FLIK_ROSTLANGD : FLIK_OMBUD;
   const anm = lasAnmalan(ss);
   const inch = lasIncheckning(ss);
   const kontroll = [];
@@ -217,28 +225,47 @@ function bygg(ss) {
     }
   });
 
-  // Matchning mot anmälan, på för- och efternamn
-  const listIndex = {};
-  ordning.forEach(k => {
-    const fl = forstSist(k);
-    (listIndex[fl] = listIndex[fl] || []).push(k);
-  });
-  anm.personer.forEach(a => {
-    const k = nyckel(a.namn);
-    let p = P[k] && P[k].roller.length ? P[k] : null;
-    if (!p) {
-      const kand = listIndex[forstSist(k)] || [];
-      if (kand.length === 1 && !P[kand[0]].anmald) {
-        p = P[kand[0]];
-        kontroll.push({ niva: 'info', typ: 'Matchad på för- och efternamn', text: 'Anmälan "' + a.namn + '" kopplad till "' + p.namn + '" i ombudslistan', id: p.id });
-      }
+  // Matchning mot anmälan. Först exakt namn, sedan med tolerans för stavning.
+  const listKeys = ordning.slice();
+  const ord = k => k.split(' ');
+  const kandidat = (k, distr) => {
+    const t = ord(k);
+    const steg = [
+      // Samma för- och efternamn, mellannamn ignoreras
+      L => forstSist(L) === forstSist(k),
+      // Det ena namnet ryms helt i det andra: "Lea Thelander" / "Lea Thelander Jacobson"
+      L => { const u = ord(L); return t.length > 1 && u.length > 1 && (t.every(x => u.indexOf(x) >= 0) || u.every(x => t.indexOf(x) >= 0)); },
+      // Samma förnamn, efternamn stavat nästan likadant: "Ismunden" / "Ismundsen"
+      L => { const u = ord(L); const a = t[t.length - 1], b = u[u.length - 1]; return t.length > 1 && u.length > 1 && u[0] === t[0] && b.length >= 4 && lev(a, b) <= 2; },
+      // Hela namnet stavat nästan likadant: "Natalie" / "Nathalie Dahlberg"
+      L => k.length >= 8 && lev(k, L) <= 2
+    ];
+    for (let i = 0; i < steg.length; i++) {
+      let c = listKeys.filter(steg[i]);
+      if (c.length > 1) c = c.filter(L => sammaDistrikt(distr, P[L].distrikt));
+      if (c.length === 1) return c[0];
+      if (c.length > 1) return null;
     }
-    if (!p) p = person(a.namn);
-    if (p.anmald) return;
+    return null;
+  };
+  const koppla = (p, a) => {
     p.anmald = true;
     p.anmaldSom = a.deltarSom;
     p.anmaldDistrikt = a.distrikt;
     if (!p.distrikt) p.distrikt = a.distrikt;
+  };
+  const rest = [];
+  anm.personer.forEach(a => {
+    const k = nyckel(a.namn);
+    if (P[k] && P[k].roller.length) koppla(P[k], a);
+    else rest.push(a);
+  });
+  rest.forEach(a => {
+    const L = kandidat(nyckel(a.namn), a.distrikt);
+    if (!L) { koppla(person(a.namn), a); return; }
+    const p = P[L];
+    kontroll.push({ niva: 'info', typ: 'Kopplad trots olika stavning', text: 'Anmälan "' + a.namn + '" = "' + p.namn + '" i listan' + (p.anmald ? ' (dubblett, slogs ihop)' : ''), id: L });
+    if (!p.anmald) koppla(p, a);
   });
   anm.dubbletter.forEach(d => {
     kontroll.push({ niva: 'info', typ: 'Dubbletter i anmälan', text: d.namn + ' (' + d.antal + ' anmälningar, slogs ihop)' + (d.olika ? '. Uppgifterna skiljer sig: ' + d.olika : ''), id: nyckel(d.namn) });
@@ -266,6 +293,7 @@ function bygg(ss) {
     if (p.roll === 'Ersättare') p.ersNr = forsta.nr;
     if (p.roll === 'Ombud' || p.roll === 'Ersättare') p.distrikt = forsta.distrikt;
     if (p.roll === 'FS') p.distrikt = 'FS';
+    if (!p.roller.length) p.distrikt = kanonisktDistrikt(p.distrikt, ombud);
 
     const f = inch[k] || {};
     p.status = f.status || '';
@@ -275,7 +303,8 @@ function bygg(ss) {
 
     if (p.roller.length && !p.anmald && !p.tillagd) {
       p.flaggor.push('Finns i ombudslistan men saknar anmälan.');
-      kontroll.push({ niva: 'info', typ: 'Ej anmäld', text: p.namn + ' (' + rollText(p.roller[0]) + ')', id: k });
+      const ombud = p.roll === 'Ombud';
+      kontroll.push({ niva: ombud ? 'varning' : 'info', typ: ombud ? 'Ombud som inte är anmälda' : 'Ej anmäld', text: p.namn + ' (' + rollText(p.raknasPa || p.roller[0]) + ')', id: k });
     }
     const som = nyckel(p.anmaldSom);
     if (!p.roller.length && (som.indexOf('ombud') >= 0 || som.indexOf('ersattare') >= 0)) {
@@ -290,18 +319,35 @@ function bygg(ss) {
     }
   });
 
-  // Röstlängdsfliken ska stämma med ombudsfliken
-  if (rl.ombud.length) {
-    const iRl = {};
-    rl.ombud.forEach(o => { iRl[nyckel(o.namn)] = o; });
-    const ombudKeys = {};
-    ombud.forEach(d => d.platser.forEach(pl => { if (pl.plats.typ === 'Ombud') ombudKeys[pl.person.id] = d.namn; }));
-    Object.keys(ombudKeys).forEach(k => {
-      if (!iRl[k]) kontroll.push({ niva: 'varning', typ: 'Röstlängdsfliken skiljer sig', text: P[k].namn + ' är ombud för ' + ombudKeys[k] + ' men saknas i fliken ' + FLIK_ROSTLANGD, id: k });
+  // Den andra fliken används som kontroll av facit
+  ombud.forEach(d => (d.dubbletter || []).forEach(n => {
+    kontroll.push({ niva: 'info', typ: 'Står två gånger i fliken ' + facitFlik, text: n + ' (' + d.namn + '), räknas en gång', id: nyckel(n) });
+  }));
+  if (jamforMed.length) {
+    const platser = lista => {
+      const m = {};
+      lista.forEach(d => d.platser.forEach((pl, i) => {
+        const k = nyckel(pl.namn);
+        if (m[k]) return;
+        const typ = i < d.mandat ? 'Ombud' : 'Ersättare';
+        m[k] = { namn: pl.namn, distrikt: d.namn, typ: typ, txt: (typ === 'Ombud' ? 'Ombud' : 'Ersättare ' + (i + 1 - d.mandat)) + ', ' + d.namn };
+      }));
+      return m;
+    };
+    const a = platser(ombud), b = platser(jamforMed);
+    const typ = 'Flikarna ' + facitFlik + ' och ' + jamforFlik + ' skiljer sig';
+    Object.keys(a).forEach(k => {
+      if (!b[k]) kontroll.push({ niva: 'varning', typ: typ, text: a[k].namn + ': ' + a[k].txt + ' i ' + facitFlik + ', saknas i ' + jamforFlik, id: k });
+      else if (a[k].typ !== b[k].typ || !sammaDistrikt(a[k].distrikt, b[k].distrikt)) {
+        kontroll.push({ niva: 'varning', typ: typ, text: a[k].namn + ': ' + a[k].txt + ' i ' + facitFlik + ', men ' + b[k].txt + ' i ' + jamforFlik, id: k });
+      }
     });
-    Object.keys(iRl).forEach(k => {
-      if (!ombudKeys[k]) kontroll.push({ niva: 'varning', typ: 'Röstlängdsfliken skiljer sig', text: iRl[k].namn + ' står i fliken ' + FLIK_ROSTLANGD + ' (' + iRl[k].distrikt + ') men är inte ombud i fliken ' + FLIK_OMBUD, id: P[k] ? k : '' });
+    Object.keys(b).forEach(k => {
+      if (!a[k]) kontroll.push({ niva: 'varning', typ: typ, text: b[k].namn + ': ' + b[k].txt + ' i ' + jamforFlik + ', saknas i ' + facitFlik + ' och räknas inte', id: P[k] ? k : '' });
     });
+    jamforMed.forEach(d => (d.dubbletter || []).forEach(n => {
+      kontroll.push({ niva: 'info', typ: 'Står två gånger i fliken ' + jamforFlik, text: n + ' (' + d.namn + ')', id: P[nyckel(n)] ? nyckel(n) : '' });
+    }));
   }
   ordning.forEach(k => { if (P[k].notering) kontroll.push({ niva: 'info', typ: 'Anteckning i listan', text: P[k].namn + ': ' + P[k].notering, id: k }); });
 
@@ -352,7 +398,8 @@ function bygg(ss) {
     totalMandat: ombud.reduce((s, d) => s + d.mandat, 0) + (FS_ROSTRATT ? fsLista.length : 0),
     rostlangd: rostlangd,
     kontroll: kontroll,
-    incheckning: inch
+    incheckning: inch,
+    facit: facitFlik
   };
 }
 
@@ -386,6 +433,7 @@ function paket(m) {
     totalMandat: m.totalMandat,
     rostlangd: m.rostlangd.map(r => r.id),
     kontroll: m.kontroll,
+    facit: m.facit,
     rostlangder: lista,
     senaste: senaste,
     utdelning: UTDELNING,
@@ -406,8 +454,10 @@ function flik(ss, namn, kravs) {
 }
 
 // Ombud: Distrikt | Antal | Protokoll | 1 | 2 | 3 ... (namn i turordning)
-function lasOmbud(ss) {
-  const v = flik(ss, FLIK_OMBUD, true).getDataRange().getDisplayValues();
+function lasOmbud(ss, kravs) {
+  const sh = flik(ss, FLIK_OMBUD, kravs);
+  if (!sh) return [];
+  const v = sh.getDataRange().getDisplayValues();
   let hr = -1, antalK = -1;
   for (let r = 0; r < Math.min(10, v.length) && hr < 0; r++) {
     const i = v[r].findIndex(c => nyckel(c) === 'antal' || nyckel(c) === 'mandat');
@@ -426,38 +476,67 @@ function lasOmbud(ss) {
     const namn = text(v[r][dK]);
     const mandat = parseInt(text(v[r][antalK]), 10);
     if (!namn || isNaN(mandat) || /totalt/i.test(namn)) continue;
-    const platser = [];
+    const platser = [], dubbletter = [];
     for (let j = start; j < v[r].length; j++) {
       const s = stada(v[r][j]);
-      if (s.namn) platser.push(s);
+      if (!s.namn) continue;
+      if (platser.some(pl => nyckel(pl.namn) === nyckel(s.namn))) dubbletter.push(s.namn);
+      else platser.push(s);
     }
-    ut.push({ namn: namn, mandat: mandat, platser: platser });
+    ut.push({ namn: namn, mandat: mandat, platser: platser, dubbletter: dubbletter });
   }
   return ut;
 }
 
-// Röstlängd: Nr | Distrikt | Namn ... FS-ledamöter har distrikt "FS".
-function lasRostlangdsflik(ss) {
-  const sh = flik(ss, FLIK_ROSTLANGD, false);
-  if (!sh) return { fs: [], ombud: [] };
+// Röstlängd: Nr | Distrikt | Namn | Ersättare ...
+// Varje rad är ett ombud. Ersättarna står i turordning från kolumnen Ersättare och
+// åt höger, på distriktets rader. FS-ledamöter har distrikt "FS".
+function lasRostlangdsflik(ss, kravs) {
+  const tom = { distrikt: [], fs: [] };
+  const sh = flik(ss, FLIK_ROSTLANGD, kravs);
+  if (!sh) return tom;
   const v = sh.getDataRange().getDisplayValues();
-  let dK = -1;
-  for (let r = 0; r < v.length && dK < 0; r++) {
-    dK = v[r].findIndex(c => text(c).toUpperCase() === 'FS');
+  let hr = -1, dK = -1, nK = -1, eK = -1;
+  for (let r = 0; r < Math.min(5, v.length) && hr < 0; r++) {
+    const h = v[r].map(nyckel);
+    if (h.indexOf('distrikt') >= 0) {
+      hr = r;
+      dK = h.indexOf('distrikt');
+      nK = h.indexOf('namn');
+      eK = h.findIndex(c => c.indexOf('ersattare') === 0);
+    }
+  }
+  if (hr < 0) {
+    for (let r = 0; r < v.length && dK < 0; r++) dK = v[r].findIndex(c => text(c).toUpperCase() === 'FS');
   }
   if (dK < 0) {
-    for (let r = 0; r < Math.min(5, v.length) && dK < 0; r++) dK = v[r].findIndex(c => nyckel(c) === 'distrikt');
+    if (kravs) throw new Error('Hittar ingen kolumn "Distrikt" i fliken ' + FLIK_ROSTLANGD + '.');
+    return tom;
   }
-  if (dK < 0) return { fs: [], ombud: [] };
-  const fs = [], ombud = [];
-  v.forEach(rad => {
+  if (nK < 0) nK = dK + 1;
+  if (eK < 0) eK = nK + 1;
+
+  const per = {}, ordn = [], fs = [];
+  for (let r = hr + 1; r < v.length; r++) {
+    const rad = v[r];
     const d = text(rad[dK]);
-    const s = stada(rad[dK + 1]);
-    if (!d || !s.namn || nyckel(d) === 'distrikt') return;
-    if (d.toUpperCase() === 'FS') fs.push(s);
-    else ombud.push({ distrikt: d, namn: s.namn });
-  });
-  return { fs: fs, ombud: ombud };
+    if (!d) continue;
+    const s = stada(rad[nK]);
+    if (d.toUpperCase() === 'FS') { if (s.namn) fs.push(s); continue; }
+    if (!per[d]) { per[d] = { ombud: [], ers: [], dubbletter: [] }; ordn.push(d); }
+    const x = per[d];
+    const lagg = (lista, n) => {
+      if (!n.namn) return;
+      if (x.ombud.concat(x.ers).some(o => nyckel(o.namn) === nyckel(n.namn))) x.dubbletter.push(n.namn);
+      else lista.push(n);
+    };
+    lagg(x.ombud, s);
+    for (let j = eK; j < rad.length; j++) lagg(x.ers, stada(rad[j]));
+  }
+  return {
+    distrikt: ordn.map(d => ({ namn: d, mandat: per[d].ombud.length, platser: per[d].ombud.concat(per[d].ers), dubbletter: per[d].dubbletter })),
+    fs: fs
+  };
 }
 
 // Anmälan: Förnamn | Efternamn | ... | Distrikt | Deltar som
@@ -595,7 +674,31 @@ function forstSist(k) {
 
 function sammaDistrikt(a, b) {
   const x = nyckel(a), y = nyckel(b);
-  return !x || !y || x === y || x.indexOf(y) >= 0 || y.indexOf(x) >= 0;
+  return !x || !y || x === y || x.indexOf(y) >= 0 || y.indexOf(x) >= 0 || (x.length >= 6 && lev(x, y) <= 2);
+}
+
+// "Östergötland" i anmälan och "Östergörland" i listan blir samma distrikt.
+function kanonisktDistrikt(namn, distrikt) {
+  const k = nyckel(namn);
+  if (!k) return namn;
+  const traff = distrikt.filter(d => nyckel(d.namn) === k || (k.length >= 6 && lev(k, nyckel(d.namn)) <= 2));
+  return traff.length === 1 ? traff[0].namn : namn;
+}
+
+// Antal tecken som skiljer två strängar (Levenshtein).
+function lev(a, b) {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > 2) return 99;
+  let fore = [];
+  for (let j = 0; j <= b.length; j++) fore[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    const nu = [i];
+    for (let j = 1; j <= b.length; j++) {
+      nu[j] = Math.min(fore[j] + 1, nu[j - 1] + 1, fore[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    fore = nu;
+  }
+  return fore[b.length];
 }
 
 function ovrigRoll(som) {
