@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0c0a;
+  --surface: #1a1512;
+  --surface-2: #231c18;
+  --surface-3: #2d241f;
+  --line: #332a24;
+  --text: #f5efe9;
+  --muted: #a99a8d;
+  --dim: #75685d;
+  --accent: #f2772b;
+  --accent-hi: #ff8c42;
+  --accent-soft: rgba(242, 119, 43, .14);
+  --ok: #5cc28a;
+  --ok-soft: rgba(92, 194, 138, .13);
+  --warn: #f5b940;
+  --warn-soft: rgba(245, 185, 64, .13);
+  --info: #7fa7e8;
+  --info-soft: rgba(127, 167, 232, .13);
+  --danger: #ef5b4c;
+  --danger-soft: rgba(239, 91, 76, .13);
+  --radius: 14px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  background-image: radial-gradient(900px 420px at 15% -10%, rgba(242, 119, 43, .13), transparent 70%),
+    radial-gradient(700px 380px at 100% 0%, rgba(176, 72, 28, .10), transparent 70%);
+  background-attachment: fixed;
+  color: var(--text);
+  font: 15px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 20px 16px 120px; }
+
+/* Rubrik */
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mark { width: 40px; height: 40px; border-radius: 11px; background: var(--accent-soft); display: grid; place-items: center; flex: none; color: var(--accent); }
+.mark svg { width: 22px; height: 22px; }
+.overline { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+h1 span { color: var(--accent); }
+.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.live { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); padding: 0 6px; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.live.on i { background: var(--ok); box-shadow: 0 0 0 4px var(--ok-soft); }
+.live.off i { background: var(--danger); }
+
+.btn { border: 1px solid var(--line); background: var(--surface-2); padding: 9px 14px; border-radius: 10px; font-weight: 500; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: background .15s, border-color .15s; position: relative; }
+.btn:hover { background: var(--surface-3); }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #1b0d03; font-weight: 600; }
+.btn.primary:hover { background: var(--accent-hi); }
+.btn.big { width: 100%; justify-content: center; padding: 16px; font-size: 17px; border-radius: 12px; }
+.btn.ghost { background: transparent; }
+.btn.warnbtn { border-color: rgba(245, 185, 64, .5); color: var(--warn); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn .badge { background: var(--warn); color: #1b1203; font-size: 11px; font-weight: 700; border-radius: 99px; padding: 1px 6px; }
+.btn:focus-visible, .row:focus-visible, select:focus-visible, .link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.only-mob { display: none; }
+
+/* Siffror */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.stat .lbl { font-size: 13px; color: var(--muted); font-weight: 500; }
+.stat .num { font-size: 38px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.stat .num small { font-size: 18px; color: var(--dim); font-weight: 600; letter-spacing: 0; }
+.stat.main .num { color: var(--accent); }
+.stat.attn .num { color: var(--warn); }
+.progress { margin: 14px 0 6px; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.progress div { height: 100%; width: 0; background: linear-gradient(90deg, #d9561d, var(--accent-hi)); border-radius: 99px; transition: width .4s ease; }
+.scope { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+/* Sök och filter */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-top: 18px; }
+.searchbar { padding: 14px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.search { position: relative; }
+.search svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--dim); }
+.search input { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 15px 44px 15px 46px; font-size: 17px; outline: none; transition: border-color .15s, box-shadow .15s; }
+.search input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.search input::placeholder { color: var(--dim); }
+.clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--muted); padding: 8px; border-radius: 8px; display: none; }
+.clear.show { display: block; }
+.clear svg { position: static; transform: none; width: 18px; height: 18px; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 34px 9px 12px; font-size: 14px; appearance: none; -webkit-appearance: none; outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a99a8d' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; max-width: 100%; }
+select:focus { border-color: var(--accent); }
+select.active { border-color: var(--accent); color: var(--accent-hi); }
+.seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; margin-left: auto; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 7px; font-size: 14px; color: var(--muted); font-weight: 500; }
+.seg button.on { background: var(--surface-3); color: var(--text); }
+.reset { background: none; border: 0; color: var(--accent); font-size: 14px; padding: 6px 4px; }
+
+/* Lista */
+.list { list-style: none; margin: 0; padding: 6px; }
+.row { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 10px; cursor: pointer; }
+.row:hover, .row.kb { background: var(--surface-2); }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-weight: 600; font-size: 14px; color: var(--muted); flex: none; }
+.row.done .avatar { background: var(--ok-soft); color: var(--ok); }
+.row.left .avatar { background: var(--danger-soft); color: var(--danger); }
+.who { flex: 1; min-width: 0; }
+.who .n { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who .n mark { background: none; color: var(--accent-hi); }
+.who .m { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap; background: var(--surface-3); color: var(--muted); }
+.tag svg { width: 12px; height: 12px; }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.tag.acc { background: var(--accent-soft); color: var(--accent-hi); }
+.tag.info { background: var(--info-soft); color: var(--info); }
+.tag.bad { background: var(--danger-soft); color: var(--danger); }
+.state { display: flex; align-items: center; gap: 6px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+.empty { padding: 44px 20px; text-align: center; color: var(--muted); }
+.empty b { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px; }
+.more { padding: 12px; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* Dialoger */
+.overlay { position: fixed; inset: 0; background: rgba(5, 3, 2, .66); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 16px; z-index: 20; animation: fade .15s ease; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; width: 100%; max-width: 480px; max-height: calc(100vh - 32px); overflow: auto; padding: 22px; box-shadow: 0 30px 80px rgba(0, 0, 0, .5); animation: rise .18s ease; }
+.sheet.wide { max-width: 760px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.sheet h2 { margin: 0; font-size: 24px; letter-spacing: -.01em; line-height: 1.2; }
+.sheet h3 { margin: 0; font-size: 18px; }
+.sheet h4 { margin: 18px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.x { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; width: 36px; height: 36px; display: grid; place-items: center; flex: none; }
+.x svg { width: 16px; height: 16px; }
+.rolebig { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; padding: 6px 12px; border-radius: 99px; margin-top: 8px; background: var(--surface-3); color: var(--text); }
+.rolebig.ombud { background: var(--accent-soft); color: var(--accent-hi); }
+.rolebig.ers { background: var(--info-soft); color: var(--info); }
+.rolebig.fs { background: var(--ok-soft); color: var(--ok); }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
+.fact { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; }
+.fact.full { grid-column: 1 / -1; }
+.fact dt { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 2px; }
+.fact dd { margin: 0; font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.alert { display: flex; gap: 12px; align-items: flex-start; border-radius: 12px; padding: 14px; margin-bottom: 12px; font-size: 14px; }
+.alert svg { width: 22px; height: 22px; flex: none; margin-top: 1px; }
+.alert b { display: block; font-size: 15px; margin-bottom: 1px; }
+.alert.warn { background: var(--warn-soft); border: 1px solid rgba(245, 185, 64, .35); color: #f7d58c; }
+.alert.warn svg, .alert.warn b { color: var(--warn); }
+.alert.ok { background: var(--ok-soft); border: 1px solid rgba(92, 194, 138, .3); color: #a8dfc0; }
+.alert.ok svg, .alert.ok b { color: var(--ok); }
+.alert.bad { background: var(--danger-soft); border: 1px solid rgba(239, 91, 76, .35); color: #f5aaa2; }
+.alert.bad svg, .alert.bad b { color: var(--danger); }
+.alert ul { margin: 4px 0 0; padding-left: 18px; }
+.actions { display: grid; gap: 10px; }
+.sublinks { display: flex; justify-content: center; gap: 18px; margin-top: 4px; }
+.link { background: none; border: 0; color: var(--muted); text-decoration: underline; font-size: 14px; padding: 6px; }
+.link.acc { color: var(--accent-hi); text-decoration: none; padding: 0; font-weight: 500; }
+
+/* Formulär */
+.field { display: grid; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.field input[type=text], .field input[type=password] { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 16px; outline: none; width: 100%; }
+.field input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.check { display: flex; align-items: center; gap: 10px; margin: 4px 0 18px; font-size: 15px; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.seg.full { margin: 0; display: flex; flex-wrap: wrap; }
+.seg.full button { flex: 1; padding: 9px; }
+.err { color: var(--danger); font-size: 14px; min-height: 20px; margin: -4px 0 10px; }
+.hint { font-size: 13px; color: var(--muted); margin: -6px 0 14px; }
+
+/* Distrikt */
+.dlist { display: grid; gap: 10px; }
+.dcard { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.dcard.gap { border-color: rgba(245, 185, 64, .45); }
+.dhead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dhead b { font-size: 16px; }
+.dnum { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); }
+.dnum strong { color: var(--text); font-size: 16px; }
+.seats { display: flex; gap: 4px; margin: 10px 0 8px; flex-wrap: wrap; }
+.seat { width: 14px; height: 14px; border-radius: 4px; background: var(--surface-3); }
+.seat.o { background: var(--accent); }
+.seat.e { background: var(--info); }
+.dline { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.dline span.l { color: var(--dim); }
+.legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); margin-bottom: 12px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+/* Röstlängd */
+.big-num { font-size: 52px; font-weight: 700; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+.big-num small { font-size: 22px; color: var(--dim); }
+.box { background: var(--surface-2); border-radius: 12px; padding: 14px; margin-top: 12px; font-size: 14px; }
+.box .ttl { font-weight: 600; margin-bottom: 6px; }
+.chg { display: grid; gap: 4px; }
+.chg div { display: flex; gap: 8px; align-items: baseline; }
+.plus { color: var(--ok); font-weight: 700; width: 12px; }
+.minus { color: var(--danger); font-weight: 700; width: 12px; }
+.hist { width: 100%; border-collapse: collapse; font-size: 14px; }
+.hist td { padding: 7px 4px; border-top: 1px solid var(--line); }
+.hist td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Kontroll */
+.kgroup { margin-bottom: 16px; }
+.kgroup .kh { display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 6px; }
+.kitem { padding: 8px 10px; border-radius: 8px; font-size: 14px; color: var(--muted); }
+.kitem.click { cursor: pointer; }
+.kitem.click:hover { background: var(--surface-2); color: var(--text); }
+
+/* PIN */
+.login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.login .sheet { animation: none; text-align: center; }
+.login .mark { margin: 0 auto 14px; width: 52px; height: 52px; border-radius: 14px; }
+.login .mark svg { width: 28px; height: 28px; }
+.login h1 { font-size: 24px; margin-bottom: 4px; }
+.login p { color: var(--muted); margin: 0 0 20px; }
+.login input { text-align: center; letter-spacing: .3em; font-size: 22px !important; }
+.login input::placeholder { letter-spacing: normal; font-size: 17px; }
+
+/* Notis */
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 12px 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 16px 40px rgba(0, 0, 0, .45); z-index: 30; max-width: calc(100% - 32px); animation: toastin .18s ease; }
+.toast.ok { border-color: rgba(92, 194, 138, .4); }
+.toast.bad { border-color: rgba(239, 91, 76, .5); }
+.toast button { background: none; border: 0; color: var(--accent-hi); font-weight: 600; padding: 4px; }
+.loading { padding: 60px 20px; text-align: center; color: var(--muted); }
+.spin { width: 26px; height: 26px; border: 3px solid var(--surface-3); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 12px; animation: spin .8s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes toastin { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+@media (max-width: 760px) {
+  .top-actions .btn span.t { display: none; }
+  .top-actions .btn { padding: 9px 11px; }
+  .top-actions .only-mob { display: block; }
+  .top-actions { gap: 6px; }
+  .live #liveText { display: none; }
+}
+@media (max-width: 640px) {
+  .wrap { padding-top: 14px; }
+  h1 { font-size: 19px; }
+  .stats { gap: 8px; }
+  .stat { padding: 12px; }
+  .stat .lbl { font-size: 12px; }
+  .stat .num { font-size: 28px; }
+  .stat .num small { font-size: 14px; }
+  .seg:not(.full) { margin-left: 0; width: 100%; }
+  .seg:not(.full) button { flex: 1; padding: 6px 4px; }
+  .filters select { flex: 1 1 40%; }
+  .overlay { place-items: end center; padding: 0; }
+  .sheet { border-radius: 20px 20px 0 0; max-height: 92vh; padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
+  .row { gap: 10px; }
+  .row .state .tag.time { display: none; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-mark" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="m8.5 12 2.5 2.5 4.5-5"/></g></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></g></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></g></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></g></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></g></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></g></symbol>
+</svg>
+
+<!-- PIN -->
+<div id="login" class="login" hidden>
+  <form class="sheet" id="loginForm" autocomplete="off">
+    <div class="mark"><svg><use href="#i-mark"/></svg></div>
+    <div class="overline">Moderata Ungdomsförbundet</div>
+    <h1>Förbundsstämma 2026</h1>
+    <p id="loginHello">Incheckning och röstlängd för admin</p>
+    <div class="field">
+      <input type="password" id="pin" inputmode="numeric" placeholder="PIN-kod" aria-label="PIN-kod" autocomplete="off">
+    </div>
+    <div class="err" id="loginErr"></div>
+    <button class="btn primary big" type="submit" id="loginBtn">Logga in</button>
+  </form>
+</div>
+
+<!-- App -->
+<div id="app" class="wrap" hidden>
+  <header class="top">
+    <div class="brand">
+      <div class="mark"><svg><use href="#i-mark"/></svg></div>
+      <div>
+        <div class="overline">Moderata Ungdomsförbundet</div>
+        <h1>Förbundsstämma <span>2026</span></h1>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="live" id="live"><i></i><span id="liveText">Ansluter</span></span>
+      <button class="btn" id="btnDistrikt" title="Mandat och ersättare per distrikt"><svg><use href="#i-map"/></svg><span class="t">Distrikt</span></button>
+      <button class="btn" id="btnRL" title="Röstlängd"><svg><use href="#i-list"/></svg><span class="t">Röstlängd</span></button>
+      <button class="btn" id="btnKontroll" title="Kontroll mot ombudslistan"><svg><use href="#i-flag"/></svg><span class="t">Kontroll</span><span class="badge" id="kBadge" hidden></span></button>
+      <button class="btn" id="btnExport" title="Ladda ner hela listan som CSV"><svg><use href="#i-down"/></svg><span class="t">Exportera</span></button>
+      <button class="btn primary" id="btnAdd" title="Lägg till deltagare på plats"><svg><use href="#i-plus"/></svg><span class="t">Lägg till</span></button>
+      <button class="btn ghost" id="btnLogout" title="Logga ut från den här enheten"><span class="t">Logga ut</span><svg class="only-mob"><use href="#i-out"/></svg></button>
+    </div>
+  </header>
+
+  <section>
+    <div class="stats">
+      <div class="stat main"><div class="lbl">Röstberättigade på plats</div><div class="num" id="sRost">0</div></div>
+      <div class="stat"><div class="lbl">Incheckade</div><div class="num" id="sIn">0</div></div>
+      <div class="stat" id="sSaknasBox"><div class="lbl">Ombud saknas</div><div class="num" id="sSaknas">0</div></div>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="scope"><span id="scope">Hela stämman</span><span id="pct">0 % av mandaten</span></div>
+  </section>
+
+  <section class="panel">
+    <div class="searchbar">
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input id="q" type="search" placeholder="Sök på namn" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+        <button class="clear" id="qClear" aria-label="Rensa sökning"><svg><use href="#i-x"/></svg></button>
+      </div>
+      <div class="filters">
+        <select id="fDistrikt" aria-label="Filtrera på distrikt"></select>
+        <select id="fRoll" aria-label="Filtrera på roll"></select>
+        <button class="reset" id="fReset" hidden>Rensa filter</button>
+        <div class="seg" id="fStatus">
+          <button data-v="alla" class="on">Alla</button>
+          <button data-v="saknas">Saknas</button>
+          <button data-v="inne">På plats</button>
+          <button data-v="ute">Lämnat</button>
+        </div>
+      </div>
+    </div>
+    <div id="loading" class="loading"><div class="spin"></div>Hämtar listorna</div>
+    <ul class="list" id="list"></ul>
+  </section>
+</div>
+
+<div id="modal"></div>
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var VISA_MAX = 300;
+  var INTERVALL = 3000;
+  var LAGRING = 'muf-fs26-pin';
+
+  var S = {
+    pin: '',
+    admin: '',
+    d: null,
+    personer: [],
+    byId: {},
+    version: null,
+    f: { q: '', distrikt: '', roll: '', status: 'alla' },
+    vantande: {},
+    skrivningar: 0,
+    hamtar: false,
+    kb: -1,
+    traffar: []
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var lagra = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+
+  function api(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (res, rej) {
+      var r = google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+      r[fn].apply(r, args);
+    });
+  }
+
+  function felText(e) {
+    var m = (e && e.message) || String(e || '');
+    return m.replace(/^Error:\s*/, '').replace(/^Exception:\s*/, '');
+  }
+  function arFelPin(e) { return felText(e).indexOf('FEL_PIN') >= 0; }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function norm(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+  var sv = new Intl.Collator('sv', { sensitivity: 'base', numeric: true });
+
+  function initialer(namn) {
+    var d = namn.split(/\s+/).filter(Boolean);
+    return ((d[0] || '')[0] || '').toUpperCase() + (d.length > 1 ? (d[d.length - 1][0] || '').toUpperCase() : '');
+  }
+  function nuTid() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  function arRostroll(p) { return p.roll === 'Ombud' || p.roll === 'Ersättare' || p.roll === 'FS'; }
+
+  // ===== Start =====
+
+  function start() {
+    try {
+      google.script.url.getLocation(function (loc) {
+        var a = loc && loc.parameter && loc.parameter.admin;
+        if (a) {
+          S.admin = String(a).slice(0, 40);
+          $('loginHello').textContent = 'Hej ' + S.admin + ', ange PIN-koden för att börja.';
+        }
+      });
+    } catch (e) {}
+    var sparad = lagra.get(LAGRING);
+    if (sparad) {
+      S.pin = sparad;
+      visaApp();
+      hamta(true);
+    } else {
+      visaLogin();
+    }
+  }
+
+  function visaLogin(fel) {
+    $('app').hidden = true;
+    $('login').hidden = false;
+    $('loginErr').textContent = fel || '';
+    setTimeout(function () { $('pin').focus(); }, 50);
+  }
+
+  function visaApp() {
+    $('login').hidden = true;
+    $('app').hidden = false;
+    setTimeout(function () { $('q').focus(); }, 50);
+  }
+
+  $('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pin = $('pin').value.trim();
+    if (!pin) return;
+    $('loginBtn').disabled = true;
+    $('loginErr').textContent = '';
+    api('hamtaData', pin, null).then(function (data) {
+      S.pin = pin;
+      lagra.set(LAGRING, pin);
+      $('loginBtn').disabled = false;
+      $('pin').value = '';
+      visaApp();
+      tillampa(data);
+    }).catch(function (err) {
+      $('loginBtn').disabled = false;
+      $('loginErr').textContent = arFelPin(err) ? 'Fel PIN-kod. Försök igen.' : felText(err);
+      $('pin').select();
+    });
+  });
+
+  // ===== Data =====
+
+  function hamta(full) {
+    if (S.hamtar) return;
+    S.hamtar = true;
+    var fore = S.skrivningar;
+    api('hamtaData', S.pin, full ? null : S.version).then(function (data) {
+      S.hamtar = false;
+      live(true);
+      if (fore !== S.skrivningar) return;
+      tillampa(data);
+    }).catch(function (err) {
+      S.hamtar = false;
+      if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
+      live(false);
+      if (!S.personer.length) $('loading').innerHTML = '<b>Kunde inte hämta listorna</b><br>' + esc(felText(err));
+    });
+  }
+
+  function tillampa(data) {
+    if (!data || !data.andrad) return;
+    S.d = data;
+    S.version = data.version;
+    S.personer = data.personer || [];
+    S.byId = {};
+    S.personer.forEach(function (p) {
+      p._n = norm(p.namn);
+      var v = S.vantande[p.id];
+      if (v) { p.status = v.status; p.tidIn = v.tidIn; p.tidUt = v.tidUt; }
+      S.byId[p.id] = p;
+    });
+    S.personer.sort(function (a, b) { return sv.compare(a.namn, b.namn); });
+    $('loading').hidden = true;
+    var varn = (data.kontroll || []).filter(function (k) { return k.niva === 'varning'; }).length;
+    $('kBadge').hidden = !varn;
+    $('kBadge').textContent = varn;
+    byggFilter();
+    rita();
+    if (vy) vy.rita(true);
+  }
+
+  function live(ok) {
+    $('live').className = 'live ' + (ok ? 'on' : 'off');
+    $('liveText').textContent = ok ? 'Live' : 'Ingen anslutning';
+  }
+
+  function loggaUt(msg) {
+    lagra.del(LAGRING);
+    S.pin = '';
+    stang();
+    visaLogin(msg);
+  }
+
+  setInterval(function () {
+    if (!S.pin || document.hidden) return;
+    hamta(false);
+  }, INTERVALL);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && S.pin) hamta(false);
+  });
+
+  // ===== Skrivningar =====
+
+  var STATUS_NOTIS = { inne: ' är incheckad', ute: ' har lämnat stämman', '': ' är inte längre incheckad' };
+
+  function andra(id, status, notis) {
+    var p = S.byId[id];
+    if (!p) return;
+    var fore = { status: p.status, tidIn: p.tidIn, tidUt: p.tidUt };
+    p.status = status;
+    if (status === 'inne') { if (!fore.status) p.tidIn = nuTid(); p.tidUt = ''; }
+    if (status === 'ute') p.tidUt = nuTid();
+    if (status === '') { p.tidIn = ''; p.tidUt = ''; }
+    S.vantande[id] = { status: p.status, tidIn: p.tidIn, tidUt: p.tidUt };
+    rita();
+    if (vy) vy.rita(true);
+    if (notis) notis(p.namn + STATUS_NOTIS[status], 'ok', 'Ångra', function () { andra(id, fore.status, null); });
+    api('sattStatus', S.pin, id, status).then(function (data) {
+      delete S.vantande[id];
+      S.skrivningar++;
+      tillampa(data);
+    }).catch(function (err) {
+      delete S.vantande[id];
+      if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
+      var q = S.byId[id];
+      if (q) { q.status = fore.status; q.tidIn = fore.tidIn; q.tidUt = fore.tidUt; }
+      rita();
+      if (vy) vy.rita(true);
+      visaNotis('Det gick inte att spara: ' + felText(err), 'bad');
+    });
+  }
+
+  function checkaIn(id) {
+    andra(id, 'inne', visaNotis);
+    stang();
+    $('q').value = '';
+    S.f.q = '';
+    rita();
+    $('q').focus();
+  }
+
+  // ===== Filter och lista =====
+
+  function distriktLista() {
+    var ordn = (S.d && S.d.distrikt || []).map(function (d) { return d.namn; });
+    var set = {};
+    ordn.forEach(function (n) { set[n] = 1; });
+    var ovr = {};
+    S.personer.forEach(function (p) { if (p.distrikt && !set[p.distrikt]) ovr[p.distrikt] = 1; });
+    return ordn.concat(Object.keys(ovr).sort(sv.compare));
+  }
+
+  function rollLista() {
+    var bas = ['Ombud', 'Ersättare', 'FS'];
+    var ovr = {};
+    S.personer.forEach(function (p) { if (bas.indexOf(p.roll) < 0) ovr[p.roll] = 1; });
+    return bas.concat(Object.keys(ovr).sort(sv.compare));
+  }
+
+  function byggFilter() {
+    [['distrikt', 'fDistrikt', 'Alla distrikt', distriktLista()], ['roll', 'fRoll', 'Alla roller', rollLista()]].forEach(function (x) {
+      var el = $(x[1]);
+      var lista = x[3];
+      if (S.f[x[0]] && lista.indexOf(S.f[x[0]]) < 0) S.f[x[0]] = '';
+      var html = '<option value="">' + x[2] + '</option>' + lista.map(function (v) {
+        return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+      }).join('');
+      if (el._html !== html) { el.innerHTML = html; el._html = html; }
+      el.value = S.f[x[0]];
+      el.classList.toggle('active', !!S.f[x[0]]);
+    });
+    $('fReset').hidden = !(S.f.distrikt || S.f.roll);
+  }
+
+  function iUrval(p) {
+    return (!S.f.distrikt || p.distrikt === S.f.distrikt) && (!S.f.roll || p.roll === S.f.roll);
+  }
+
+  function markera(namn, ord) {
+    if (!ord.length) return esc(namn);
+    var n = norm(namn);
+    var traff = new Array(namn.length).fill(false);
+    ord.forEach(function (o) {
+      var i = n.indexOf(o);
+      while (i >= 0) { for (var k = i; k < i + o.length; k++) traff[k] = true; i = n.indexOf(o, i + 1); }
+    });
+    var ut = '', oppen = false;
+    for (var i = 0; i < namn.length; i++) {
+      if (traff[i] && !oppen) { ut += '<mark>'; oppen = true; }
+      if (!traff[i] && oppen) { ut += '</mark>'; oppen = false; }
+      ut += esc(namn[i]);
+    }
+    return ut + (oppen ? '</mark>' : '');
+  }
+
+  function rollKort(p) {
+    if (p.roll === 'Ersättare') return 'Ersättare ' + p.ersNr;
+    return p.roll;
+  }
+
+  // Siffrorna överst följer distriktsfiltret.
+  function siffror() {
+    var d = S.d;
+    if (!d) return;
+    var dist = S.f.distrikt;
+    var rost = 0, mandat = 0, saknas = 0;
+    d.distrikt.forEach(function (x) {
+      if (dist && x.namn !== dist) return;
+      rost += x.ombudInne + x.tjanstgor.length;
+      mandat += x.mandat;
+      saknas += x.saknas.length;
+    });
+    if (d.fs.rostratt && (!dist || dist === 'FS')) {
+      rost += d.fs.ids.filter(function (id) { return S.byId[id] && S.byId[id].status === 'inne'; }).length;
+      mandat += d.fs.ids.length;
+    }
+    var urval = S.personer.filter(iUrval);
+    var inne = urval.filter(function (p) { return p.status === 'inne'; }).length;
+    $('sRost').innerHTML = rost + ' <small>/ ' + mandat + '</small>';
+    $('sIn').innerHTML = inne + ' <small>/ ' + urval.length + '</small>';
+    $('sSaknas').textContent = saknas;
+    $('sSaknasBox').classList.toggle('attn', saknas > 0);
+    var pct = mandat ? Math.round(rost / mandat * 100) : 0;
+    $('bar').style.width = pct + '%';
+    $('pct').textContent = pct + ' % av mandaten';
+    var delar = [];
+    if (S.f.distrikt) delar.push(S.f.distrikt);
+    if (S.f.roll) delar.push(S.f.roll);
+    $('scope').textContent = delar.length ? 'Visar ' + delar.join(' · ') : 'Hela stämman';
+  }
+
+  function rita() {
+    siffror();
+    var ord = norm(S.f.q).split(/\s+/).filter(Boolean);
+    var traffar = S.personer.filter(function (p) {
+      if (!iUrval(p)) return false;
+      if (S.f.status === 'saknas' && p.status) return false;
+      if (S.f.status === 'inne' && p.status !== 'inne') return false;
+      if (S.f.status === 'ute' && p.status !== 'ute') return false;
+      return ord.every(function (o) { return p._n.indexOf(o) >= 0; });
+    });
+    if (ord.length) {
+      traffar.sort(function (a, b) {
+        var sa = a._n.indexOf(ord[0]) === 0 || a._n.indexOf(' ' + ord[0]) >= 0 ? 0 : 1;
+        var sb = b._n.indexOf(ord[0]) === 0 || b._n.indexOf(' ' + ord[0]) >= 0 ? 0 : 1;
+        return sa - sb || sv.compare(a.namn, b.namn);
+      });
+    }
+    S.traffar = traffar;
+    if (S.kb >= traffar.length) S.kb = traffar.length - 1;
+    if (ord.length && traffar.length === 1) S.kb = 0;
+    $('qClear').classList.toggle('show', !!S.f.q);
+
+    var list = $('list');
+    if (!traffar.length) {
+      var tom = S.f.q
+        ? '<b>Ingen träff på "' + esc(S.f.q) + '"</b>Kontrollera stavningen eller lägg till personen på plats.'
+        : (S.f.status === 'saknas' ? '<b>Alla är incheckade</b>Snyggt jobbat.' : '<b>Ingen här</b>Ändra filtret.');
+      list.innerHTML = '<li class="empty">' + tom + '</li>';
+      return;
+    }
+    var html = traffar.slice(0, VISA_MAX).map(function (p, i) {
+      var meta = [rollKort(p), p.roll === 'FS' ? '' : p.distrikt].filter(Boolean).join(' · ');
+      var t = '';
+      if (p.flaggor.length) t += '<span class="tag warn" title="Kontrollera"><svg><use href="#i-warn"/></svg></span>';
+      if (p.tjanstgor) t += '<span class="tag info">Tjänstgör</span>';
+      if (p.status === 'inne') t += '<span class="tag ' + (p.rost ? 'ok' : '') + ' time">' + (p.rost ? 'Röst · ' : '') + esc(p.tidIn) + '</span>';
+      if (p.status === 'ute') t += '<span class="tag bad">Lämnat ' + esc(p.tidUt) + '</span>';
+      var av = p.status === 'inne' ? '<svg width="18" height="18"><use href="#i-check"/></svg>' : esc(initialer(p.namn));
+      return '<li class="row' + (p.status === 'inne' ? ' done' : p.status === 'ute' ? ' left' : '') + (i === S.kb ? ' kb' : '') + '" data-id="' + esc(p.id) + '">' +
+        '<div class="avatar">' + av + '</div>' +
+        '<div class="who"><div class="n">' + markera(p.namn, ord) + '</div><div class="m">' + esc(meta) + '</div></div>' +
+        '<div class="state">' + t + '</div></li>';
+    }).join('');
+    if (traffar.length > VISA_MAX) html += '<li class="more">Visar ' + VISA_MAX + ' av ' + traffar.length + '. Sök eller filtrera för att se fler.</li>';
+    list.innerHTML = html;
+  }
+
+  $('list').addEventListener('click', function (e) {
+    var row = e.target.closest('.row');
+    if (row) visaPerson(row.getAttribute('data-id'));
+  });
+  $('q').addEventListener('input', function () { S.f.q = this.value; S.kb = -1; rita(); });
+  $('q').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var p = S.traffar[S.kb >= 0 ? S.kb : 0];
+      if (p && (S.kb >= 0 || S.traffar.length === 1)) visaPerson(p.id);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      var max = Math.min(S.traffar.length, VISA_MAX) - 1;
+      S.kb = Math.max(0, Math.min(max, S.kb + (e.key === 'ArrowDown' ? 1 : -1)));
+      rita();
+      var el = document.querySelector('.row.kb');
+      if (el) el.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Escape') {
+      this.value = ''; S.f.q = ''; rita();
+    }
+  });
+  $('qClear').addEventListener('click', function () { $('q').value = ''; S.f.q = ''; rita(); $('q').focus(); });
+  $('fDistrikt').addEventListener('change', function () { S.f.distrikt = this.value; byggFilter(); rita(); });
+  $('fRoll').addEventListener('change', function () { S.f.roll = this.value; byggFilter(); rita(); });
+  $('fReset').addEventListener('click', function () { S.f.distrikt = ''; S.f.roll = ''; byggFilter(); rita(); });
+  $('fStatus').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    S.f.status = b.getAttribute('data-v');
+    Array.prototype.forEach.call(this.children, function (c) { c.classList.toggle('on', c === b); });
+    rita();
+  });
+
+  // ===== Dialoger =====
+
+  // vy = den dialog som är öppen och ska ritas om när data ändras
+  var vy = null;
+  var X = '<button class="x" data-close aria-label="Stäng"><svg><use href="#i-x"/></svg></button>';
+
+  function oppna(html, wide) {
+    var gammal = document.querySelector('#modal .sheet');
+    var scroll = gammal ? gammal.scrollTop : 0;
+    $('modal').innerHTML = '<div class="overlay"><div class="sheet' + (wide ? ' wide' : '') + '" role="dialog" aria-modal="true">' + html + '</div></div>';
+    if (scroll) document.querySelector('#modal .sheet').scrollTop = scroll;
+  }
+  function stang() {
+    vy = null;
+    $('modal').innerHTML = '';
+  }
+  $('modal').addEventListener('click', function (e) {
+    if (e.target.classList.contains('overlay') || e.target.closest('[data-close]')) { stang(); $('q').focus(); return; }
+    var l = e.target.closest('[data-person]');
+    if (l) visaPerson(l.getAttribute('data-person'));
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && $('modal').innerHTML) { stang(); $('q').focus(); }
+  });
+
+  function namnLank(id) {
+    var p = S.byId[id];
+    if (!p) return '';
+    return '<button class="link acc" data-person="' + esc(id) + '">' + esc(p.namn) + '</button>';
+  }
+
+  function rostText(p) {
+    if (p.roll === 'Ombud') return p.rost ? 'Ja' : (p.status === 'inne' ? 'Nej, räknas inte på mandatet' : 'Ja, när personen är på plats');
+    if (p.roll === 'Ersättare') return p.tjanstgor ? 'Ja, tjänstgör' : (p.status === 'inne' ? 'Nej, väntar (inget ombud saknas just nu)' : 'Endast om ersättaren tjänstgör');
+    if (p.roll === 'FS') return S.d.fs.rostratt ? (p.rost ? 'Ja' : 'Ja, när personen är på plats') : 'Nej';
+    return 'Nej';
+  }
+
+  function visaPerson(id) {
+    var p = S.byId[id];
+    if (!p) { stang(); return; }
+    vy = { rita: function () { visaPerson(id); } };
+    var klass = p.roll === 'Ombud' ? 'ombud' : p.roll === 'Ersättare' ? 'ers' : p.roll === 'FS' ? 'fs' : '';
+    var flaggor = p.flaggor.length
+      ? '<div class="alert warn"><svg><use href="#i-warn"/></svg><div><b>Kontrollera</b><ul>' +
+        p.flaggor.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul></div></div>'
+      : '';
+    var status = '';
+    if (p.status === 'inne') status = '<div class="alert ok"><svg><use href="#i-check"/></svg><div><b>Incheckad ' + esc(p.tidIn) + '</b>' + (p.rost ? 'Röstberättigad just nu.' : 'På plats.') + '</div></div>';
+    if (p.status === 'ute') status = '<div class="alert bad"><svg><use href="#i-out"/></svg><div><b>Lämnade ' + esc(p.tidUt) + '</b>Incheckad ' + esc(p.tidIn) + '. Räknas inte i röstlängden.</div></div>';
+
+    var u = S.d.utdelning || {};
+    var utd = u[p.roll] || u['Övriga'] || '';
+    var fakta =
+      '<div class="fact"><dt>Distrikt</dt><dd>' + esc(p.distrikt || '–') + '</dd></div>' +
+      '<div class="fact"><dt>Rösträtt</dt><dd>' + esc(rostText(p)) + '</dd></div>' +
+      '<div class="fact"><dt>Anmäld</dt><dd>' + (p.tillagd ? 'Tillagd på plats' : p.anmald ? 'Ja' + (p.anmaldSom ? ', som ' + esc(p.anmaldSom) : '') : 'Nej') + '</dd></div>' +
+      '<div class="fact"><dt>I ombudslistan</dt><dd>' + (p.listroller.length ? esc(p.listroller.join(', ')) : 'Nej') + '</dd></div>';
+    if (!p.status && utd) fakta += '<div class="fact full"><dt>Lämna ut</dt><dd>' + esc(utd) + '</dd></div>';
+
+    var knappar;
+    if (!p.status) {
+      knappar = '<button class="btn primary big" id="mIn"><svg width="20" height="20"><use href="#i-check"/></svg>Checka in</button>';
+    } else if (p.status === 'inne') {
+      knappar = '<button class="btn big warnbtn" id="mUt"><svg width="20" height="20"><use href="#i-out"/></svg>Checka ut, lämnar stämman</button>' +
+        '<div class="sublinks"><button class="link" id="mAngra">Ångra incheckning (felklick)</button></div>';
+    } else {
+      knappar = '<button class="btn primary big" id="mIn"><svg width="20" height="20"><use href="#i-check"/></svg>Checka in igen</button>' +
+        '<div class="sublinks"><button class="link" id="mAngra">Återställ till ej incheckad</button></div>';
+    }
+
+    oppna(
+      '<div class="sheet-head"><div><h2>' + esc(p.namn) + '</h2>' +
+      '<span class="rolebig ' + klass + '">' + esc(p.roll === 'Ersättare' ? 'Ersättare ' + p.ersNr : p.roll) + (p.tjanstgor ? ' · tjänstgör' : '') + '</span></div>' + X + '</div>' +
+      flaggor + status + '<dl class="facts">' + fakta + '</dl><div class="actions">' + knappar + '</div>'
+    );
+    var bIn = $('mIn');
+    if (bIn) {
+      bIn.addEventListener('click', function () { checkaIn(id); });
+      bIn.focus();
+    }
+    var bUt = $('mUt');
+    if (bUt) bUt.addEventListener('click', function () { andra(id, 'ute', visaNotis); });
+    var bA = $('mAngra');
+    if (bA) bA.addEventListener('click', function () { andra(id, '', visaNotis); });
+  }
+
+  // Distrikt: mandat, saknade ombud och vilka ersättare som träder in
+  var baraLuckor = false;
+  function visaDistrikt() {
+    vy = { rita: visaDistrikt };
+    var d = S.d;
+    var namnLista = function (ids, medNr) {
+      return ids.map(function (id) {
+        var p = S.byId[id];
+        return (medNr && p && p.ersNr ? 'Ers ' + p.ersNr + ' ' : '') + namnLank(id);
+      }).join(', ');
+    };
+    var kort = d.distrikt.filter(function (x) { return !baraLuckor || x.saknas.length; }).map(function (x) {
+      var fylld = x.ombudInne + x.tjanstgor.length;
+      var seats = '';
+      for (var i = 0; i < x.mandat; i++) seats += '<i class="seat' + (i < x.ombudInne ? ' o' : i < fylld ? ' e' : '') + '"></i>';
+      var rader = '';
+      if (x.saknas.length) {
+        rader += '<div class="dline"><span class="l">Ombud saknas:</span> ' + x.saknas.map(function (s) {
+          return namnLank(s.id) + (s.ejGiltig ? ' (räknas som FS)' : '');
+        }).join(', ') + '</div>';
+      }
+      if (x.tjanstgor.length) rader += '<div class="dline"><span class="l">Träder in:</span> ' + namnLista(x.tjanstgor, true) + '</div>';
+      if (x.vakanta) rader += '<div class="dline" style="color:var(--warn)">' + x.vakanta + (x.vakanta === 1 ? ' plats står tom' : ' platser står tomma') + ', ingen ersättare på plats</div>';
+      if (x.vantar.length) rader += '<div class="dline"><span class="l">Ersättare på plats som väntar:</span> ' + namnLista(x.vantar, true) + '</div>';
+      if (x.ersEj.length && x.saknas.length) rader += '<div class="dline"><span class="l">Ersättare ej på plats:</span> ' + namnLista(x.ersEj, true) + '</div>';
+      return '<div class="dcard' + (x.vakanta ? ' gap' : '') + '"><div class="dhead"><b>' + esc(x.namn) + '</b>' +
+        '<span class="dnum"><strong>' + fylld + '</strong> / ' + x.mandat + ' röster · ' + x.ombudInne + ' ombud' +
+        (x.tjanstgor.length ? ' + ' + x.tjanstgor.length + ' ers' : '') + '</span></div>' +
+        '<div class="seats">' + seats + '</div>' + rader + '</div>';
+    }).join('');
+    var fsInne = d.fs.ids.filter(function (id) { return S.byId[id] && S.byId[id].status === 'inne'; });
+    var fsSaknas = d.fs.ids.filter(function (id) { return fsInne.indexOf(id) < 0; });
+    var fsKort = d.fs.ids.length && !baraLuckor
+      ? '<div class="dcard"><div class="dhead"><b>FS</b><span class="dnum"><strong>' + fsInne.length + '</strong> / ' + d.fs.ids.length + ' på plats' + (d.fs.rostratt ? '' : ' · ej rösträtt') + '</span></div>' +
+        (fsSaknas.length ? '<div class="dline"><span class="l">Saknas:</span> ' + namnLista(fsSaknas) + '</div>' : '') + '</div>'
+      : '';
+    oppna('<div class="sheet-head"><div><h3>Distrikt och mandat</h3><div class="scope">Ersättare träder in i turordning när ombud saknas. Beslutsstöd, justera manuellt vid behov.</div></div>' + X + '</div>' +
+      '<div class="legend"><span><i style="background:var(--accent)"></i>Ombud på plats</span><span><i style="background:var(--info)"></i>Ersättare tjänstgör</span><span><i style="background:var(--surface-3)"></i>Tom plats</span></div>' +
+      '<label class="check"><input type="checkbox" id="dLuckor"' + (baraLuckor ? ' checked' : '') + '> Visa bara distrikt där ombud saknas</label>' +
+      '<div class="dlist">' + (kort || '<div class="empty"><b>Alla ombud är på plats</b></div>') + fsKort + '</div>', true);
+    $('dLuckor').addEventListener('change', function () { baraLuckor = this.checked; visaDistrikt(); });
+  }
+  $('btnDistrikt').addEventListener('click', visaDistrikt);
+
+  // Röstlängd
+  var bekrafta = false, sparar = false, senastFaststalld = null;
+  function aktuellRostlangd() {
+    var d = S.d;
+    var ordn = {};
+    d.distrikt.forEach(function (x, i) { ordn[x.namn] = i; });
+    return d.rostlangd.map(function (id) { return S.byId[id]; }).filter(Boolean).sort(function (a, b) {
+      var oa = a.roll === 'FS' ? 999 : (ordn[a.distrikt] != null ? ordn[a.distrikt] : 998);
+      var ob = b.roll === 'FS' ? 999 : (ordn[b.distrikt] != null ? ordn[b.distrikt] : 998);
+      var ra = a.roll === 'Ombud' ? 0 : a.roll === 'Ersättare' ? 1 : 2;
+      var rb = b.roll === 'Ombud' ? 0 : b.roll === 'Ersättare' ? 1 : 2;
+      return oa - ob || ra - rb || (a.ersNr - b.ersNr) || sv.compare(a.namn, b.namn);
+    });
+  }
+  function grund(p) { return p.roll === 'Ersättare' ? 'Ersättare ' + p.ersNr : p.roll; }
+
+  function visaRostlangd() {
+    vy = { rita: visaRostlangd };
+    var d = S.d;
+    var nu = aktuellRostlangd();
+    var sen = d.senaste;
+    var diffHtml = '';
+    if (sen) {
+      var fore = {};
+      sen.rader.forEach(function (r) { fore[r[0]] = r; });
+      var efter = {};
+      nu.forEach(function (p) { efter[p.id] = p; });
+      var till = nu.filter(function (p) { return !fore[p.id]; });
+      var ut = sen.rader.filter(function (r) { return !efter[r[0]]; });
+      diffHtml = '<div class="box"><div class="ttl">Förändring sedan röstlängd nr ' + sen.nr + ' (' + esc(sen.tid.slice(11)) + ', ' + sen.rader.length + ' röster)</div>' +
+        (till.length || ut.length
+          ? '<div class="chg">' + till.map(function (p) { return '<div><span class="plus">+</span>' + namnLank(p.id) + ' <span style="color:var(--dim)">' + esc(grund(p) + (p.roll === 'FS' ? '' : ', ' + p.distrikt)) + '</span></div>'; }).join('') +
+            ut.map(function (r) { return '<div><span class="minus">−</span>' + (S.byId[r[0]] ? namnLank(r[0]) : esc(r[2])) + ' <span style="color:var(--dim)">' + esc(r[3] + (r[1] === 'FS' ? '' : ', ' + r[1])) + '</span></div>'; }).join('') + '</div>'
+          : '<div style="color:var(--muted)">Inga förändringar.</div>') + '</div>';
+    }
+    var resultat = '';
+    if (senastFaststalld) {
+      var f = senastFaststalld;
+      resultat = '<div class="alert ok"><svg><use href="#i-check"/></svg><div><b>Röstlängd nr ' + f.nr + ' fastställd: ' + f.antal + ' röster</b>' +
+        'Sparad i fliken "' + esc(f.flik) + '".' + (f.nr > 1 ? ' ' + f.tillkom.length + ' tillkom, ' + f.utgick.length + ' utgick.' : '') + '</div></div>';
+    }
+    var hist = d.rostlangder.length
+      ? '<h4>Fastställda röstlängder</h4><table class="hist">' + d.rostlangder.slice().reverse().map(function (r) {
+          return '<tr><td>Nr ' + r.nr + '</td><td>' + esc(r.tid) + '</td><td>' + r.antal + ' röster</td></tr>';
+        }).join('') + '</table>'
+      : '';
+    var nr = d.rostlangder.length + 1;
+    oppna('<div class="sheet-head"><div><h3>Röstlängd</h3><div class="scope">Röstberättigade som är på plats just nu</div></div>' + X + '</div>' +
+      resultat +
+      '<div class="big-num">' + nu.length + ' <small>/ ' + d.totalMandat + '</small></div>' +
+      diffHtml +
+      '<div class="actions" style="margin-top:16px">' +
+      (sparar
+        ? '<button class="btn primary big" disabled>Sparar röstlängd nr ' + nr + '...</button>'
+        : bekrafta
+        ? '<button class="btn primary big" id="rlOk">Bekräfta: fastställ röstlängd nr ' + nr + ' med ' + nu.length + ' röster</button><div class="sublinks"><button class="link" id="rlAvbryt">Avbryt</button></div>'
+        : '<button class="btn primary big" id="rlFast">Fastställ röstlängd nr ' + nr + '</button>') +
+      '<button class="btn big" id="rlExport"><svg><use href="#i-down"/></svg>Ladda ner aktuell röstlängd</button></div>' +
+      hist, true);
+    var b = $('rlFast');
+    if (b) b.addEventListener('click', function () { bekrafta = true; senastFaststalld = null; visaRostlangd(); });
+    var a = $('rlAvbryt');
+    if (a) a.addEventListener('click', function () { bekrafta = false; visaRostlangd(); });
+    var ok = $('rlOk');
+    if (ok) ok.addEventListener('click', function () {
+      sparar = true;
+      visaRostlangd();
+      api('faststallRostlangd', S.pin).then(function (data) {
+        sparar = false;
+        bekrafta = false;
+        senastFaststalld = data.faststalld;
+        S.skrivningar++;
+        tillampa(data);
+        if (!vy) visaRostlangd();
+      }).catch(function (err) {
+        sparar = false;
+        bekrafta = false;
+        if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
+        visaRostlangd();
+        visaNotis('Kunde inte fastställa: ' + felText(err), 'bad');
+      });
+    });
+    $('rlExport').addEventListener('click', function () {
+      laddaNer('Röstlängd', [['Nr', 'Distrikt', 'Namn', 'Grund', 'Incheckad']].concat(nu.map(function (p, i) {
+        return [i + 1, p.roll === 'FS' ? 'FS' : p.distrikt, p.namn, grund(p), p.tidIn];
+      })));
+    });
+  }
+  $('btnRL').addEventListener('click', function () { bekrafta = false; senastFaststalld = null; visaRostlangd(); });
+
+  // Kontroll mot ombudslistan
+  function visaKontroll() {
+    vy = { rita: visaKontroll };
+    var k = S.d.kontroll || [];
+    var grupper = {}, ordn = [];
+    k.forEach(function (x) {
+      if (!grupper[x.typ]) { grupper[x.typ] = { niva: x.niva, rader: [] }; ordn.push(x.typ); }
+      grupper[x.typ].rader.push(x);
+    });
+    ordn.sort(function (a, b) { return (grupper[a].niva === 'varning' ? 0 : 1) - (grupper[b].niva === 'varning' ? 0 : 1); });
+    var html = ordn.map(function (t) {
+      var g = grupper[t];
+      return '<div class="kgroup"><div class="kh"><span class="tag ' + (g.niva === 'varning' ? 'warn' : 'info') + '">' + g.rader.length + '</span>' + esc(t) + '</div>' +
+        g.rader.map(function (x) {
+          var kan = x.id && S.byId[x.id];
+          return '<div class="kitem' + (kan ? ' click" data-person="' + esc(x.id) : '') + '">' + esc(x.text) + '</div>';
+        }).join('') + '</div>';
+    }).join('');
+    oppna('<div class="sheet-head"><div><h3>Kontroll mot ombudslistan</h3><div class="scope">Ombudsfliken är facit. Rätta i kalkylarket, så uppdateras listan här.</div></div>' + X + '</div>' +
+      (html || '<div class="empty"><b>Allt stämmer</b>Inga avvikelser hittades.</div>'), true);
+  }
+  $('btnKontroll').addEventListener('click', visaKontroll);
+
+  // Lägg till
+  function visaLaggTill() {
+    vy = null;
+    var roller = S.d.rollerPaPlats || ['Observatör'];
+    var html = '<div class="sheet-head"><div><h3>Lägg till på plats</h3><div class="scope">För gäster och observatörer som saknas i listan</div></div>' + X + '</div>' +
+      '<form id="addForm" autocomplete="off">' +
+      '<div class="field"><label for="aNamn">Namn</label><input type="text" id="aNamn" required></div>' +
+      '<div class="field"><label for="aDistr">Distrikt</label><input type="text" id="aDistr" list="dlD" value="' + esc(S.f.distrikt) + '">' +
+      '<datalist id="dlD">' + distriktLista().map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist></div>' +
+      '<div class="field"><label>Roll</label><div class="seg full" id="aRoll">' +
+      roller.map(function (r, i) { return '<button type="button" data-v="' + esc(r) + '"' + (i === 0 ? ' class="on"' : '') + '>' + esc(r) + '</button>'; }).join('') + '</div></div>' +
+      '<p class="hint">Ombud och ersättare läggs till i fliken Ombud i kalkylarket, inte här.</p>' +
+      '<label class="check"><input type="checkbox" id="aIn" checked> Checka in direkt</label>' +
+      '<div class="err" id="aErr"></div>' +
+      '<button class="btn primary big" type="submit" id="aBtn">Lägg till</button></form>';
+    oppna(html);
+    var namn = $('aNamn');
+    namn.value = S.f.q;
+    namn.focus();
+    var roll = roller[0];
+    $('aRoll').addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      roll = b.getAttribute('data-v');
+      Array.prototype.forEach.call(this.children, function (c) { c.classList.toggle('on', c === b); });
+    });
+    $('addForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var d = { namn: namn.value.trim(), distrikt: $('aDistr').value.trim(), roll: roll, checkaIn: $('aIn').checked };
+      if (!d.namn) { $('aErr').textContent = 'Skriv ett namn.'; return; }
+      $('aBtn').disabled = true;
+      api('laggTill', S.pin, d).then(function (data) {
+        S.skrivningar++;
+        stang();
+        $('q').value = ''; S.f.q = '';
+        tillampa(data);
+        visaNotis(d.namn + (d.checkaIn ? ' är tillagd och incheckad' : ' är tillagd'), 'ok');
+        $('q').focus();
+      }).catch(function (err) {
+        if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
+        $('aBtn').disabled = false;
+        $('aErr').textContent = felText(err);
+      });
+    });
+  }
+  $('btnAdd').addEventListener('click', visaLaggTill);
+  $('btnLogout').addEventListener('click', function () { loggaUt('Du är utloggad.'); });
+
+  // Export
+  function laddaNer(namn, rader) {
+    var cell = function (v) {
+      v = String(v == null ? '' : v);
+      return /[";\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    };
+    var csv = '﻿' + rader.map(function (r) { return r.map(cell).join(';'); }).join('\r\n');
+    var d = new Date();
+    var fil = 'MUF-FS26-' + namn + '-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0') + '.csv';
+    try {
+      var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      var a = document.createElement('a');
+      a.href = url; a.download = fil;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      visaNotis('Filen är nedladdad (' + (rader.length - 1) + ' rader)', 'ok');
+    } catch (e) {
+      window.open('data:text/csv;charset=utf-8,' + encodeURIComponent(csv), '_blank');
+    }
+  }
+  $('btnExport').addEventListener('click', function () {
+    var rader = [['Namn', 'Distrikt', 'Roll', 'Röstberättigad nu', 'Status', 'Incheckad', 'Lämnade', 'Anmäld', 'Anmäld som', 'Tillagd på plats', 'Att kontrollera']];
+    S.personer.forEach(function (p) {
+      rader.push([p.namn, p.distrikt, grund(p), p.rost ? 'Ja' : '', p.status === 'inne' ? 'På plats' : p.status === 'ute' ? 'Lämnat' : 'Saknas',
+        p.tidIn, p.tidUt, p.anmald ? 'Ja' : 'Nej', p.anmaldSom, p.tillagd ? 'Ja' : '', p.flaggor.join(' ')]);
+    });
+    laddaNer('Deltagare', rader);
+  });
+
+  // Notiser
+  var toastTimer;
+  function visaNotis(text, typ, knappText, knappFn) {
+    clearTimeout(toastTimer);
+    $('toast').innerHTML = '<div class="toast ' + (typ || '') + '"><span>' + esc(text) + '</span>' +
+      (knappText ? '<button id="tBtn">' + esc(knappText) + '</button>' : '') + '</div>';
+    if (knappText) $('tBtn').addEventListener('click', function () { $('toast').innerHTML = ''; knappFn(); });
+    toastTimer = setTimeout(function () { $('toast').innerHTML = ''; }, knappText ? 6000 : 3500);
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
