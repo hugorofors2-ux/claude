@@ -29,7 +29,14 @@ Personnummer, e-post och telefon läses aldrig in i appen.
    Kontrollera att rad 1 börjar med `/**`.
 3. Ändra `const PIN = 'ÄNDRA';` till er PIN-kod.
 4. Klicka **+** vid Filer > **HTML**, döp filen till `Index` och klistra in hela [`Index.html`](Index.html).
-5. Spara. Välj **forbered** i rullistan och klicka **Kör**. Godkänn behörigheterna.
+5. Spara (Cmd/Ctrl + S). Klicka på **Kod.gs** i fillistan till vänster, inte på Index.html.
+   I verktygsfältet ovanför koden står: **Kör**, **Felsök**, en rullista med ett funktionsnamn
+   (t.ex. `myFunction` eller `doGet`) och **Körningslogg**. Öppna rullistan, välj **forbered**
+   (utan ö) och klicka **Kör**.
+   Första gången ber Google om behörighet: **Granska behörigheter**, välj ditt konto. Om det står att
+   Google inte har verifierat appen: klicka **Avancerat** och sedan länken längst ner för att gå
+   vidare till projektet. Visas kryssrutor, kryssa i alla. Klicka **Tillåt** eller **Fortsätt**.
+   Körningsloggen ska sluta med `Klart. Distrikt: 25, mandat: 113`.
    Fliken `Incheckning` ska dyka upp i kalkylarket.
 6. **Implementera > Ny implementering > Webbapp**. Kör som: **Jag**. Åtkomst: **Alla**.
 7. Kopiera URL:en som slutar på `/exec` och lägg till `?admin=Namn` för varje admin.
