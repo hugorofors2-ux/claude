@@ -181,10 +181,10 @@ function bygg(ss) {
   const P = {};
   const ordning = [];
 
-  const person = (namn, notering) => {
-    const k = nyckel(namn);
+  const person = (namn, notering, id) => {
+    const k = id || nyckel(namn);
     if (!P[k]) {
-      P[k] = { id: k, namn: namn, distrikt: '', roller: [], anmald: false, anmaldSom: '', anmaldDistrikt: '', notering: '', flaggor: [] };
+      P[k] = { id: k, nyckel: nyckel(namn), namn: namn, distrikt: '', roller: [], anmald: false, anmaldSom: '', anmaldDistrikt: '', notering: '', flaggor: [] };
       ordning.push(k);
     }
     if (notering && P[k].notering.indexOf(notering) < 0) P[k].notering = (P[k].notering ? P[k].notering + '; ' : '') + notering;
@@ -195,7 +195,14 @@ function bygg(ss) {
   ombud.forEach(d => {
     d.platser.forEach((pl, i) => {
       const pos = i + 1;
-      const p = person(pl.namn, pl.notering);
+      // Samma namn i ett annat distrikt är en annan person: "Engla Nordell" i Jönköping och i Örebro.
+      let id = nyckel(pl.namn);
+      const annan = P[id] && P[id].roller.filter(r => r.typ !== 'FS' && r.distrikt !== d.namn)[0];
+      if (annan) {
+        id = id + '@' + nyckel(d.namn);
+        kontroll.push({ niva: 'info', typ: 'Samma namn i flera distrikt', text: pl.namn + ' (' + annan.distrikt + ' och ' + d.namn + ') hanteras som olika personer', id: id });
+      }
+      const p = person(pl.namn, pl.notering, id);
       const plats = pos <= d.mandat
         ? { typ: 'Ombud', distrikt: d.namn, nr: pos }
         : { typ: 'Ersättare', distrikt: d.namn, nr: pos - d.mandat };
@@ -241,7 +248,7 @@ function bygg(ss) {
       L => k.length >= 8 && lev(k, L) <= 2
     ];
     for (let i = 0; i < steg.length; i++) {
-      let c = listKeys.filter(steg[i]);
+      let c = listKeys.filter(L => steg[i](P[L].nyckel));
       if (c.length > 1) c = c.filter(L => sammaDistrikt(distr, P[L].distrikt));
       if (c.length === 1) return c[0];
       if (c.length > 1) return null;
@@ -254,10 +261,18 @@ function bygg(ss) {
     p.anmaldDistrikt = a.distrikt;
     if (!p.distrikt) p.distrikt = a.distrikt;
   };
+  // Exakt namn. Finns namnet i flera distrikt avgör distriktet i anmälan.
+  const exakt = a => {
+    const k = nyckel(a.namn);
+    const c = listKeys.filter(L => P[L].nyckel === k);
+    if (c.length <= 1) return c[0];
+    const d = c.filter(L => sammaDistrikt(a.distrikt, P[L].distrikt));
+    return d.length === 1 ? d[0] : c.filter(L => !P[L].anmald)[0] || c[0];
+  };
   const rest = [];
   anm.personer.forEach(a => {
-    const k = nyckel(a.namn);
-    if (P[k] && P[k].roller.length) koppla(P[k], a);
+    const L = exakt(a);
+    if (L) koppla(P[L], a);
     else rest.push(a);
   });
   rest.forEach(a => {
