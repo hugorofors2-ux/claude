@@ -10,6 +10,7 @@ Samma upplägg som incheckningen för HK26, men en egen kopia med egen länk och
 | `Ombud` | **Kontroll.** Jämförs med Röstlängd. Avvikelser visas under Kontroll men påverkar inte röstlängden. |
 | `Anmälan` | Alla anmälda. Dubbletter på för- och efternamn slås ihop. Personer som inte står i ombudslistan får rollen från kolumnen *Deltar som*. |
 | `Incheckning` | Skapas av systemet. Här sparas vem som är på plats och när. |
+| `Tjänstgöring` | Skapas av systemet. Vilken ersättare som tjänstgör på vilken ombudsplats. |
 | `Röstlängd 1 kl 10.30` m.fl. | Skapas när ni fastställer en röstlängd. |
 
 Vill ni byta facit till fliken Ombud: ändra `FACIT` överst i Code.gs.
@@ -56,10 +57,24 @@ Personnummer, e-post och telefon läses aldrig in i appen.
 ## Under stämman
 
 - **Checka in** = personen har fått röstkort, namnlapp osv.
-- **Checka ut** = personen lämnar stämman. Ombudets plats blir ledig och nästa ersättare på plats träder in.
+- **Checka ut** = personen lämnar stämman. Ombudets plats blir tom och nästa ersättare föreslås.
 - **Ångra** = rättar ett felklick.
-- **Distrikt** visar mandat, vilka ombud som saknas och vilka ersättare som träder in. Det är ett beslutsstöd.
-- **Röstlängd > Fastställ** sparar röstlängden som en ny flik med tidpunkt, och visar vad som ändrats sedan förra.
+- **Distrikt** visar mandat, vilka ombud som saknas och vilka ersättare som tjänstgör eller föreslås.
+
+### Röstlängd
+
+Knappen **Röstlängd** öppnar en egen vy med alla platser 1-113 i ombudsnummerordning, grupperade per distrikt.
+Lägg till `&vy=rostlangd` i länken för en dator som bara ska visa röstlängden.
+
+- Saknas ett ombud **föreslås** nästa ersättare i turordning som är på plats.
+- Förslaget räknas **inte** förrän en admin klickar **Bekräfta**, eller väljer en annan ersättare i listan.
+- Ersättare som inte är incheckade eller redan tjänstgör går inte att välja.
+- Checkas ombudet in igen **tar ombudet tillbaka platsen direkt**. Ersättaren får bekräftas på nytt om ombudet går igen.
+- Checkas en tjänstgörande ersättare ut blir platsen tom och nästa ersättare föreslås.
+- FS-platserna har inga ersättare.
+- **Fastställ röstlängd** sparar den som en ny flik med ombudsnummer och tidpunkt, och visar vad som ändrats sedan förra.
+  Platser som väntar på bekräftelse räknas inte, och vyn varnar för dem innan du fastställer.
+- **Ladda ner** ger samma lista som CSV.
 - **Kontroll** listar avvikelser mot ombudslistan. Rätta i kalkylarket, så uppdateras appen inom några sekunder.
 - Ändringar i fliken Ombud (t.ex. byte av ersättare) slår igenom direkt. Incheckningar ligger kvar.
 

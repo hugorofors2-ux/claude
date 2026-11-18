@@ -214,6 +214,33 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
 .kitem.click { cursor: pointer; }
 .kitem.click:hover { background: var(--surface-2); color: var(--text); }
 
+/* Röstlängd */
+.rl-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.rl-top h2 { margin: 2px 0 0; font-size: 26px; letter-spacing: -.01em; }
+.rl-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 0; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 6px 12px; font-size: 13px; color: var(--muted); }
+.chip b { color: var(--text); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.seatlist { list-style: none; margin: 0; padding: 4px 6px 8px; }
+.dsep { padding: 16px 12px 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); font-weight: 700; display: flex; justify-content: space-between; gap: 10px; }
+.srow { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 12px; border-radius: 10px; }
+.srow + .srow { border-top: 1px solid var(--line); }
+.srow.forslag { background: rgba(242, 119, 43, .06); }
+.snr { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; background: var(--surface-3); color: var(--muted); }
+.srow.ombud .snr { background: var(--accent-soft); color: var(--accent-hi); }
+.srow.ersattare .snr { background: var(--info-soft); color: var(--info); }
+.srow.fs .snr { background: var(--ok-soft); color: var(--ok); }
+.srow.tom .snr { background: transparent; border: 2px dashed var(--line); color: var(--dim); }
+.sinfo { min-width: 0; }
+.sinfo .h { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.sinfo .h.dim .link.acc { color: var(--muted); }
+.sinfo .s { font-size: 13px; color: var(--muted); }
+.sinfo .s b { color: var(--text); }
+.sinfo .s.warn { color: var(--warn); }
+.sact { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.sact select { padding: 8px 30px 8px 10px; font-size: 13px; max-width: 230px; }
+.btn.sm { padding: 7px 12px; font-size: 13px; }
+
 /* PIN */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
 .login .sheet { animation: none; text-align: center; }
@@ -259,6 +286,10 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
   .sheet { border-radius: 20px 20px 0 0; max-height: 92vh; padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
   .row { gap: 10px; }
   .row .state .tag.time { display: none; }
+  .srow { grid-template-columns: 42px minmax(0, 1fr); gap: 10px; }
+  .snr { width: 40px; height: 40px; font-size: 15px; }
+  .sact { grid-column: 2; justify-content: flex-start; }
+  .sact select { max-width: 100%; flex: 1; }
 }
 </style>
 </head>
@@ -314,6 +345,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
     </div>
   </header>
 
+  <div id="inVy">
   <section>
     <div class="stats">
       <div class="stat main"><div class="lbl">Röstberättigade på plats</div><div class="num" id="sRost">0</div></div>
@@ -346,6 +378,9 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
     <div id="loading" class="loading"><div class="spin"></div>Hämtar listorna</div>
     <ul class="list" id="list"></ul>
   </section>
+  </div>
+
+  <section id="rlVy" hidden></section>
 </div>
 
 <div id="modal"></div>
@@ -420,6 +455,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
   function start() {
     try {
       google.script.url.getLocation(function (loc) {
+        if (loc && loc.parameter && loc.parameter.vy === 'rostlangd') visaVy('rl');
         var a = loc && loc.parameter && loc.parameter.admin;
         if (a) {
           S.admin = String(a).slice(0, 40);
@@ -508,6 +544,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
     $('kBadge').textContent = varn;
     byggFilter();
     rita();
+    ritaRL();
     if (vy) vy.rita(true);
   }
 
@@ -627,6 +664,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
 
   function rollKort(p) {
     if (p.roll === 'Ersättare') return 'Ersättare ' + p.ersNr;
+    if ((p.roll === 'Ombud' || p.roll === 'FS') && p.plats) return p.roll + ' nr ' + p.plats;
     return p.roll;
   }
 
@@ -635,17 +673,10 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
     var d = S.d;
     if (!d) return;
     var dist = S.f.distrikt;
-    var rost = 0, mandat = 0, saknas = 0;
-    d.distrikt.forEach(function (x) {
-      if (dist && x.namn !== dist) return;
-      rost += x.ombudInne + x.tjanstgor.length;
-      mandat += x.mandat;
-      saknas += x.saknas.length;
-    });
-    if (d.fs.rostratt && (!dist || dist === 'FS')) {
-      rost += d.fs.ids.filter(function (id) { return S.byId[id] && S.byId[id].status === 'inne'; }).length;
-      mandat += d.fs.ids.length;
-    }
+    var pl = d.platser.filter(function (x) { return !dist || x.distrikt === dist; });
+    var rost = pl.filter(function (x) { return x.innehavare; }).length;
+    var mandat = pl.length;
+    var saknas = pl.filter(function (x) { return !x.fs && x.typ !== 'ombud'; }).length;
     var urval = S.personer.filter(iUrval);
     var inne = urval.filter(function (p) { return p.status === 'inne'; }).length;
     $('sRost').innerHTML = rost + ' <small>/ ' + mandat + '</small>';
@@ -695,7 +726,8 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
       var meta = [rollKort(p), p.roll === 'FS' ? '' : p.distrikt].filter(Boolean).join(' · ');
       var t = '';
       if (p.flaggor.length) t += '<span class="tag warn" title="Kontrollera"><svg><use href="#i-warn"/></svg></span>';
-      if (p.tjanstgor) t += '<span class="tag info">Tjänstgör</span>';
+      if (p.tjanstgor) t += '<span class="tag info">Tjänstgör plats ' + p.plats + '</span>';
+      else if (p.forslagPlats) t += '<span class="tag acc">Föreslås plats ' + p.forslagPlats + '</span>';
       if (p.status === 'inne') t += '<span class="tag ' + (p.rost ? 'ok' : '') + ' time">' + (p.rost ? 'Röst · ' : '') + esc(p.tidIn) + '</span>';
       if (p.status === 'ute') t += '<span class="tag bad">Lämnat ' + esc(p.tidUt) + '</span>';
       var av = p.status === 'inne' ? '<svg width="18" height="18"><use href="#i-check"/></svg>' : esc(initialer(p.namn));
@@ -773,9 +805,13 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
   }
 
   function rostText(p) {
-    if (p.roll === 'Ombud') return p.rost ? 'Ja' : (p.status === 'inne' ? 'Nej, räknas inte på mandatet' : 'Ja, när personen är på plats');
-    if (p.roll === 'Ersättare') return p.tjanstgor ? 'Ja, tjänstgör' : (p.status === 'inne' ? 'Nej, väntar (inget ombud saknas just nu)' : 'Endast om ersättaren tjänstgör');
-    if (p.roll === 'FS') return S.d.fs.rostratt ? (p.rost ? 'Ja' : 'Ja, när personen är på plats') : 'Nej';
+    if (p.roll === 'Ombud') return p.rost ? 'Ja, plats ' + p.plats : 'När ombudet är på plats (plats ' + p.plats + ')';
+    if (p.roll === 'Ersättare') {
+      if (p.tjanstgor) return 'Ja, tjänstgör på plats ' + p.plats;
+      if (p.forslagPlats) return 'Föreslås för plats ' + p.forslagPlats + '. Bekräftas i Röstlängd.';
+      return p.status === 'inne' ? 'Nej, ingen ledig plats just nu' : 'Endast om ersättaren tjänstgör';
+    }
+    if (p.roll === 'FS') return S.d.fs.rostratt ? (p.rost ? 'Ja, plats ' + p.plats : 'När personen är på plats (plats ' + p.plats + ')') : 'Nej';
     return 'Nej';
   }
 
@@ -814,7 +850,7 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
 
     oppna(
       '<div class="sheet-head"><div><h2>' + esc(p.namn) + '</h2>' +
-      '<span class="rolebig ' + klass + '">' + esc(p.roll === 'Ersättare' ? 'Ersättare ' + p.ersNr : p.roll) + (p.tjanstgor ? ' · tjänstgör' : '') + '</span></div>' + X + '</div>' +
+      '<span class="rolebig ' + klass + '">' + esc(rollKort(p)) + (p.tjanstgor ? ' · tjänstgör plats ' + p.plats : '') + '</span></div>' + X + '</div>' +
       flaggor + status + '<dl class="facts">' + fakta + '</dl><div class="actions">' + knappar + '</div>'
     );
     var bIn = $('mIn');
@@ -850,8 +886,10 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
           return namnLank(s.id) + (s.ejGiltig ? ' (räknas som FS)' : '');
         }).join(', ') + '</div>';
       }
-      if (x.tjanstgor.length) rader += '<div class="dline"><span class="l">Träder in:</span> ' + namnLista(x.tjanstgor, true) + '</div>';
-      if (x.vakanta) rader += '<div class="dline" style="color:var(--warn)">' + x.vakanta + (x.vakanta === 1 ? ' plats står tom' : ' platser står tomma') + ', ingen ersättare på plats</div>';
+      if (x.tjanstgor.length) rader += '<div class="dline"><span class="l">Tjänstgör:</span> ' + namnLista(x.tjanstgor, true) + '</div>';
+      if (x.forslag.length) rader += '<div class="dline"><span class="l">Föreslås:</span> ' + namnLista(x.forslag, true) + ' <span class="l">(bekräftas i Röstlängd)</span></div>';
+      var utan = x.vakanta - x.forslag.length;
+      if (utan > 0) rader += '<div class="dline" style="color:var(--warn)">' + utan + (utan === 1 ? ' plats står tom' : ' platser står tomma') + ', ingen ersättare på plats</div>';
       if (x.vantar.length) rader += '<div class="dline"><span class="l">Ersättare på plats som väntar:</span> ' + namnLista(x.vantar, true) + '</div>';
       if (x.ersEj.length && x.saknas.length) rader += '<div class="dline"><span class="l">Ersättare ej på plats:</span> ' + namnLista(x.ersEj, true) + '</div>';
       return '<div class="dcard' + (x.vakanta ? ' gap' : '') + '"><div class="dhead"><b>' + esc(x.namn) + '</b>' +
@@ -865,8 +903,8 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
       ? '<div class="dcard"><div class="dhead"><b>FS</b><span class="dnum"><strong>' + fsInne.length + '</strong> / ' + d.fs.ids.length + ' på plats' + (d.fs.rostratt ? '' : ' · ej rösträtt') + '</span></div>' +
         (fsSaknas.length ? '<div class="dline"><span class="l">Saknas:</span> ' + namnLista(fsSaknas) + '</div>' : '') + '</div>'
       : '';
-    oppna('<div class="sheet-head"><div><h3>Distrikt och mandat</h3><div class="scope">Ersättare träder in i turordning när ombud saknas. Beslutsstöd, justera manuellt vid behov.</div></div>' + X + '</div>' +
-      '<div class="legend"><span><i style="background:var(--accent)"></i>Ombud på plats</span><span><i style="background:var(--info)"></i>Ersättare tjänstgör</span><span><i style="background:var(--surface-3)"></i>Tom plats</span></div>' +
+    oppna('<div class="sheet-head"><div><h3>Distrikt och mandat</h3><div class="scope">Ersättare föreslås i turordning när ombud saknas och räknas när de bekräftats i Röstlängd.</div></div>' + X + '</div>' +
+      '<div class="legend"><span><i style="background:var(--accent)"></i>Ombud på plats</span><span><i style="background:var(--info)"></i>Bekräftad ersättare</span><span><i style="background:var(--surface-3)"></i>Tom plats</span></div>' +
       (valt ? '<p class="hint" style="margin:0 0 12px">Visar ' + esc(valt) + '. <button class="link acc" id="dAlla">Visa alla distrikt</button></p>'
         : '<label class="check"><input type="checkbox" id="dLuckor"' + (baraLuckor ? ' checked' : '') + '> Visa bara distrikt där ombud saknas</label>') +
       '<div class="dlist">' + (kort || '<div class="empty"><b>Alla ombud är på plats</b></div>') + fsKort + '</div>', true);
@@ -875,95 +913,232 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
   }
   $('btnDistrikt').addEventListener('click', visaDistrikt);
 
-  // Röstlängd
+  // ===== Röstlängd: plats 1-113 i ombudsnummerordning =====
   var bekrafta = false, sparar = false, senastFaststalld = null;
-  function aktuellRostlangd() {
-    var d = S.d;
-    var ordn = {};
-    d.distrikt.forEach(function (x, i) { ordn[x.namn] = i; });
-    return d.rostlangd.map(function (id) { return S.byId[id]; }).filter(Boolean).sort(function (a, b) {
-      var oa = a.roll === 'FS' ? 999 : (ordn[a.distrikt] != null ? ordn[a.distrikt] : 998);
-      var ob = b.roll === 'FS' ? 999 : (ordn[b.distrikt] != null ? ordn[b.distrikt] : 998);
-      var ra = a.roll === 'Ombud' ? 0 : a.roll === 'Ersättare' ? 1 : 2;
-      var rb = b.roll === 'Ombud' ? 0 : b.roll === 'Ersättare' ? 1 : 2;
-      return oa - ob || ra - rb || (a.ersNr - b.ersNr) || sv.compare(a.namn, b.namn);
-    });
-  }
+  var rlF = { status: 'alla', distrikt: '', q: '' };
+  var rlVantar = false, rlArbetar = {};
+
   function grund(p) { return p.roll === 'Ersättare' ? 'Ersättare ' + p.ersNr : p.roll; }
 
-  function visaRostlangd() {
-    vy = { rita: visaRostlangd };
+  function visaVy(namn) {
+    S.vy = namn;
+    $('inVy').hidden = namn !== 'rl' ? false : true;
+    $('rlVy').hidden = namn !== 'rl';
+    $('btnRL').querySelector('.t').textContent = namn === 'rl' ? 'Incheckning' : 'Röstlängd';
+    $('btnRL').title = namn === 'rl' ? 'Tillbaka till incheckningen' : 'Röstlängd, plats 1-' + (S.d ? S.d.totalMandat : '');
+    window.scrollTo(0, 0);
+    if (namn === 'rl') ritaRL(); else $('q').focus();
+  }
+  $('btnRL').addEventListener('click', function () { bekrafta = false; senastFaststalld = null; visaVy(S.vy === 'rl' ? 'in' : 'rl'); });
+
+  function ersVal(x) {
+    var dist = S.d.distrikt.filter(function (d) { return d.namn === x.distrikt; })[0];
+    if (!dist || !dist.ersattare.length) return '';
+    var upptagen = {};
+    S.d.platser.forEach(function (p) { if (p.typ === 'ersattare') upptagen[p.innehavare] = p.nr; });
+    var opts = dist.ersattare.map(function (id) {
+      var p = S.byId[id];
+      if (!p) return '';
+      var hinder = p.status !== 'inne' ? ' (ej på plats)' : upptagen[id] && upptagen[id] !== x.nr ? ' (plats ' + upptagen[id] + ')' : '';
+      return '<option value="' + esc(id) + '"' + (hinder ? ' disabled' : '') + (x.innehavare === id ? ' selected' : '') + '>Ers ' + p.ersNr + ' ' + esc(p.namn) + hinder + '</option>';
+    }).join('');
+    return '<select class="ersval" data-nr="' + x.nr + '" aria-label="Välj ersättare för plats ' + x.nr + '">' +
+      '<option value="">' + (x.typ === 'ersattare' ? 'Byt ersättare' : 'Välj annan') + '</option>' + opts + '</select>';
+  }
+
+  function platsRad(x) {
+    var o = S.byId[x.ombud], h = S.byId[x.innehavare], f = S.byId[x.forslag];
+    var info = '', act = '';
+    if (x.typ === 'ombud') {
+      info = '<div class="h">' + namnLank(o.id) + '</div><div class="s">' + (x.fs ? 'FS' : 'Ombud') + ' · på plats</div>';
+    } else if (x.typ === 'ersattare') {
+      info = '<div class="h">' + namnLank(h.id) + '</div><div class="s">Ersättare ' + h.ersNr + ' för ' + esc(o.namn) + (x.sedan ? ' · sedan ' + esc(x.sedan) : '') + '</div>';
+      act = ersVal(x) + '<button class="btn sm ghost" data-ta="' + x.nr + '">Ta bort</button>';
+    } else if (x.fs) {
+      info = '<div class="h dim">' + namnLank(o.id) + '</div><div class="s">FS · ' + (o.status === 'ute' ? 'har lämnat ' + esc(o.tidUt) : 'ej incheckad') + '</div>';
+    } else {
+      var orsak = !x.giltig ? 'räknas som FS' : o.status === 'ute' ? 'lämnade ' + o.tidUt : 'ej incheckad';
+      info = '<div class="h dim">' + namnLank(o.id) + '</div><div class="s">Ombud saknas, ' + esc(orsak) + '</div>' +
+        (x.problem ? '<div class="s warn">' + esc(x.problem) + '</div>' : '') +
+        (f ? '<div class="s">Förslag: <b>Ers ' + f.ersNr + ' ' + esc(f.namn) + '</b></div>' : '<div class="s warn">Ingen ersättare på plats</div>');
+      act = (f ? '<button class="btn sm primary" data-bekrafta="' + x.nr + '" data-ers="' + esc(f.id) + '">Bekräfta</button>' : '') + ersVal(x);
+    }
+    if (rlArbetar[x.nr]) act = '<span class="s">Sparar...</span>';
+    return '<li class="srow ' + (x.fs && x.typ === 'ombud' ? 'fs' : x.typ) + (x.typ === 'tom' && f ? ' forslag' : '') + '">' +
+      '<div class="snr">' + x.nr + '</div><div class="sinfo">' + info + '</div><div class="sact">' + act + '</div></li>';
+  }
+
+  function ritaRL() {
     var d = S.d;
-    var nu = aktuellRostlangd();
-    var sen = d.senaste;
-    var diffHtml = '';
-    if (sen) {
-      var fore = {};
-      sen.rader.forEach(function (r) { fore[r[0]] = r; });
-      var efter = {};
-      nu.forEach(function (p) { efter[p.id] = p; });
-      var till = nu.filter(function (p) { return !fore[p.id]; });
-      var ut = sen.rader.filter(function (r) { return !efter[r[0]]; });
-      diffHtml = '<div class="box"><div class="ttl">Förändring sedan röstlängd nr ' + sen.nr + ' (' + esc(sen.tid.slice(11)) + ', ' + sen.rader.length + ' röster)</div>' +
+    var el = $('rlVy');
+    if (!d || S.vy !== 'rl') return;
+    // Rita inte om medan någon håller på att välja i en lista
+    var a = document.activeElement;
+    if (a && a.classList && a.classList.contains('ersval') && el.contains(a)) { rlVantar = true; return; }
+    rlVantar = false;
+
+    var pl = d.platser;
+    var n = { ombud: 0, ers: 0, fs: 0, forslag: 0, tom: 0 };
+    pl.forEach(function (x) {
+      if (x.typ === 'ombud') { if (x.fs) n.fs++; else n.ombud++; }
+      else if (x.typ === 'ersattare') n.ers++;
+      else { n.tom++; if (x.forslag) n.forslag++; }
+    });
+    var roster = d.rostlangd.length;
+    var nr = d.rostlangder.length + 1;
+
+    var diff = '';
+    if (d.senaste) {
+      var fore = {}, efter = {};
+      d.senaste.rader.forEach(function (r) { fore[r[0]] = r; });
+      d.rostlangd.forEach(function (r) { efter[r.id] = r; });
+      var till = d.rostlangd.filter(function (r) { return !fore[r.id]; });
+      var ut = d.senaste.rader.filter(function (r) { return !efter[r[0]]; });
+      diff = '<div class="box"><div class="ttl">Sedan röstlängd nr ' + d.senaste.nr + ' (kl ' + esc(d.senaste.tid.slice(11)) + ', ' + d.senaste.rader.length + ' röster)</div>' +
         (till.length || ut.length
-          ? '<div class="chg">' + till.map(function (p) { return '<div><span class="plus">+</span>' + namnLank(p.id) + ' <span style="color:var(--dim)">' + esc(grund(p) + (p.roll === 'FS' ? '' : ', ' + p.distrikt)) + '</span></div>'; }).join('') +
-            ut.map(function (r) { return '<div><span class="minus">−</span>' + (S.byId[r[0]] ? namnLank(r[0]) : esc(r[2])) + ' <span style="color:var(--dim)">' + esc(r[3] + (r[1] === 'FS' ? '' : ', ' + r[1])) + '</span></div>'; }).join('') + '</div>'
+          ? '<div class="chg">' + till.map(function (r) { return '<div><span class="plus">+</span><span>' + r.nr + '</span>' + namnLank(r.id) + ' <span style="color:var(--dim)">' + esc(r.grund) + '</span></div>'; }).join('') +
+            ut.map(function (r) { return '<div><span class="minus">−</span><span>' + esc(r[4] || '') + '</span>' + (S.byId[r[0]] ? namnLank(r[0]) : esc(r[2])) + ' <span style="color:var(--dim)">' + esc(r[3]) + '</span></div>'; }).join('') + '</div>'
           : '<div style="color:var(--muted)">Inga förändringar.</div>') + '</div>';
     }
-    var resultat = '';
-    if (senastFaststalld) {
-      var f = senastFaststalld;
-      resultat = '<div class="alert ok"><svg><use href="#i-check"/></svg><div><b>Röstlängd nr ' + f.nr + ' fastställd: ' + f.antal + ' röster</b>' +
-        'Sparad i fliken "' + esc(f.flik) + '".' + (f.nr > 1 ? ' ' + f.tillkom.length + ' tillkom, ' + f.utgick.length + ' utgick.' : '') + '</div></div>';
-    }
-    var hist = d.rostlangder.length
-      ? '<h4>Fastställda röstlängder</h4><table class="hist">' + d.rostlangder.slice().reverse().map(function (r) {
-          return '<tr><td>Nr ' + r.nr + '</td><td>' + esc(r.tid) + '</td><td>' + r.antal + ' röster</td></tr>';
-        }).join('') + '</table>'
+    var resultat = senastFaststalld
+      ? '<div class="alert ok"><svg><use href="#i-check"/></svg><div><b>Röstlängd nr ' + senastFaststalld.nr + ' fastställd: ' + senastFaststalld.antal + ' röster</b>Sparad i fliken "' + esc(senastFaststalld.flik) + '".</div></div>'
       : '';
-    var nr = d.rostlangder.length + 1;
-    oppna('<div class="sheet-head"><div><h3>Röstlängd</h3><div class="scope">Röstberättigade som är på plats just nu</div></div>' + X + '</div>' +
-      resultat +
-      '<div class="big-num">' + nu.length + ' <small>/ ' + d.totalMandat + '</small></div>' +
-      diffHtml +
-      '<div class="actions" style="margin-top:16px">' +
-      (sparar
-        ? '<button class="btn primary big" disabled>Sparar röstlängd nr ' + nr + '...</button>'
-        : bekrafta
-        ? '<button class="btn primary big" id="rlOk">Bekräfta: fastställ röstlängd nr ' + nr + ' med ' + nu.length + ' röster</button><div class="sublinks"><button class="link" id="rlAvbryt">Avbryt</button></div>'
-        : '<button class="btn primary big" id="rlFast">Fastställ röstlängd nr ' + nr + '</button>') +
-      '<button class="btn big" id="rlExport"><svg><use href="#i-down"/></svg>Ladda ner aktuell röstlängd</button></div>' +
-      hist, true);
-    var b = $('rlFast');
-    if (b) b.addEventListener('click', function () { bekrafta = true; senastFaststalld = null; visaRostlangd(); });
-    var a = $('rlAvbryt');
-    if (a) a.addEventListener('click', function () { bekrafta = false; visaRostlangd(); });
-    var ok = $('rlOk');
-    if (ok) ok.addEventListener('click', function () {
+    var fastst = sparar
+      ? '<button class="btn primary" disabled>Sparar röstlängd nr ' + nr + '...</button>'
+      : bekrafta
+      ? '<button class="btn primary" id="rlOk">Bekräfta: nr ' + nr + ' med ' + roster + ' röster</button><button class="btn ghost" id="rlAvbryt">Avbryt</button>'
+      : '<button class="btn primary" id="rlFast">Fastställ röstlängd nr ' + nr + '</button>';
+    var varning = bekrafta && n.forslag
+      ? '<div class="alert warn"><svg><use href="#i-warn"/></svg><div><b>' + n.forslag + (n.forslag === 1 ? ' plats väntar' : ' platser väntar') + ' på bekräftelse</b>Föreslagna ersättare räknas inte förrän de bekräftats.</div></div>'
+      : '';
+
+    var q = norm(rlF.q).trim();
+    var rader = pl.filter(function (x) {
+      if (rlF.distrikt && x.distrikt !== rlF.distrikt) return false;
+      if (rlF.status === 'forslag' && !(x.typ === 'tom' && x.forslag)) return false;
+      if (rlF.status === 'tom' && x.typ !== 'tom') return false;
+      if (rlF.status === 'ers' && x.typ !== 'ersattare') return false;
+      if (!q) return true;
+      if (/^\d+$/.test(q)) return String(x.nr) === q;
+      var namn = [x.ombud, x.innehavare, x.forslag].map(function (id) { return S.byId[id] ? S.byId[id]._n : ''; }).join(' ');
+      return namn.indexOf(q) >= 0 || norm(x.distrikt).indexOf(q) >= 0;
+    });
+    var lista = '', forraD = null;
+    rader.forEach(function (x) {
+      if (x.distrikt !== forraD) {
+        forraD = x.distrikt;
+        var alla = pl.filter(function (y) { return y.distrikt === x.distrikt; });
+        var fyllda = alla.filter(function (y) { return y.innehavare; }).length;
+        lista += '<li class="dsep"><span>' + esc(x.distrikt) + '</span><span>' + fyllda + ' / ' + alla.length + '</span></li>';
+      }
+      lista += platsRad(x);
+    });
+    var distOpts = ['<option value="">Alla distrikt</option>'].concat(d.distrikt.map(function (x) { return x.namn; }).concat(d.fs.ids.length ? ['FS'] : []).map(function (v) {
+      return '<option value="' + esc(v) + '"' + (rlF.distrikt === v ? ' selected' : '') + '>' + esc(v) + '</option>';
+    })).join('');
+    var seg = [['alla', 'Alla'], ['forslag', 'Väntar (' + n.forslag + ')'], ['tom', 'Tomma (' + n.tom + ')'], ['ers', 'Ersättare (' + n.ers + ')']].map(function (b) {
+      return '<button data-v="' + b[0] + '"' + (rlF.status === b[0] ? ' class="on"' : '') + '>' + b[1] + '</button>';
+    }).join('');
+    var hist = d.rostlangder.length
+      ? '<section class="panel" style="padding:14px 16px"><h4 style="margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Fastställda röstlängder</h4><table class="hist">' +
+        d.rostlangder.slice().reverse().map(function (r) { return '<tr><td>Nr ' + r.nr + '</td><td>' + esc(r.tid) + '</td><td>' + r.antal + ' röster</td></tr>'; }).join('') + '</table></section>'
+      : '';
+
+    var scroll = window.scrollY;
+    var hadQ = document.activeElement && document.activeElement.id === 'rlQ';
+    el.innerHTML =
+      '<div class="rl-top"><div><div class="overline">Plats 1-' + d.totalMandat + ' enligt röstlängden</div><h2>Röstlängd</h2></div>' +
+      '<div class="rl-actions">' + fastst + '<button class="btn ghost" id="rlExport" title="Ladda ner aktuell röstlängd som CSV"><svg><use href="#i-down"/></svg><span>Ladda ner</span></button></div></div>' +
+      resultat + varning +
+      '<div class="stats"><div class="stat main"><div class="lbl">Röster just nu</div><div class="num">' + roster + ' <small>/ ' + d.totalMandat + '</small></div></div>' +
+      '<div class="stat' + (n.forslag ? ' attn' : '') + '"><div class="lbl">Väntar på bekräftelse</div><div class="num">' + n.forslag + '</div></div>' +
+      '<div class="stat"><div class="lbl">Tomma platser</div><div class="num">' + n.tom + '</div></div></div>' +
+      '<div class="chips"><span class="chip"><b>' + n.ombud + '</b>ombud på plats</span><span class="chip"><b>' + n.ers + '</b>ersättare tjänstgör</span>' +
+      (d.fs.ids.length ? '<span class="chip"><b>' + n.fs + '</b>FS på plats</span>' : '') + '</div>' +
+      diff +
+      '<section class="panel"><div class="searchbar"><div class="search"><svg><use href="#i-search"/></svg>' +
+      '<input id="rlQ" type="search" placeholder="Sök ombudsnummer eller namn" autocomplete="off" value="' + esc(rlF.q) + '"></div>' +
+      '<div class="filters"><select id="rlDist" aria-label="Filtrera på distrikt"' + (rlF.distrikt ? ' class="active"' : '') + '>' + distOpts + '</select>' +
+      '<div class="seg" id="rlSeg">' + seg + '</div></div></div>' +
+      '<ul class="seatlist">' + (lista || '<li class="empty"><b>Inga platser här</b>Ändra filtret.</li>') + '</ul></section>' +
+      hist;
+    window.scrollTo(0, scroll);
+    if (hadQ) { var i = $('rlQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+  }
+
+  function sattErs(nr, id, text) {
+    rlArbetar[nr] = true;
+    ritaRL();
+    api('sattErsattare', S.pin, nr, id).then(function (data) {
+      delete rlArbetar[nr];
+      S.skrivningar++;
+      tillampa(data);
+      visaNotis(text, 'ok');
+    }).catch(function (err) {
+      delete rlArbetar[nr];
+      if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
+      ritaRL();
+      visaNotis(felText(err), 'bad');
+    });
+  }
+
+  $('rlVy').addEventListener('click', function (e) {
+    var t = e.target.closest('button');
+    if (!t) return;
+    var p;
+    if (t.hasAttribute('data-person')) return visaPerson(t.getAttribute('data-person'));
+    if (t.hasAttribute('data-bekrafta')) {
+      p = S.byId[t.getAttribute('data-ers')];
+      return sattErs(+t.getAttribute('data-bekrafta'), p.id, p.namn + ' tjänstgör på plats ' + t.getAttribute('data-bekrafta'));
+    }
+    if (t.hasAttribute('data-ta')) return sattErs(+t.getAttribute('data-ta'), '', 'Ersättaren är borttagen från plats ' + t.getAttribute('data-ta'));
+    if (t.parentNode.id === 'rlSeg') { rlF.status = t.getAttribute('data-v'); return ritaRL(); }
+    if (t.id === 'rlFast') { bekrafta = true; senastFaststalld = null; return ritaRL(); }
+    if (t.id === 'rlAvbryt') { bekrafta = false; return ritaRL(); }
+    if (t.id === 'rlOk') {
       sparar = true;
-      visaRostlangd();
+      ritaRL();
       api('faststallRostlangd', S.pin).then(function (data) {
         sparar = false;
         bekrafta = false;
         senastFaststalld = data.faststalld;
         S.skrivningar++;
         tillampa(data);
-        if (!vy) visaRostlangd();
       }).catch(function (err) {
         sparar = false;
         bekrafta = false;
         if (arFelPin(err)) { loggaUt('PIN-koden har ändrats. Logga in igen.'); return; }
-        visaRostlangd();
+        ritaRL();
         visaNotis('Kunde inte fastställa: ' + felText(err), 'bad');
       });
-    });
-    $('rlExport').addEventListener('click', function () {
-      laddaNer('Röstlängd', [['Nr', 'Distrikt', 'Namn', 'Grund', 'Incheckad']].concat(nu.map(function (p, i) {
-        return [i + 1, p.roll === 'FS' ? 'FS' : p.distrikt, p.namn, grund(p), p.tidIn];
+      return;
+    }
+    if (t.id === 'rlExport') {
+      laddaNer('Röstlängd', [['Ombudsnr', 'Distrikt', 'Namn', 'Grund', 'Ordinarie ombud']].concat(S.d.platser.filter(function (x) { return x.innehavare; }).map(function (x) {
+        var r = S.d.rostlangd.filter(function (y) { return y.nr === x.nr; })[0];
+        return [x.nr, x.distrikt, S.byId[x.innehavare].namn, r ? r.grund : '', S.byId[x.ombud].namn];
       })));
-    });
-  }
-  $('btnRL').addEventListener('click', function () { bekrafta = false; senastFaststalld = null; visaRostlangd(); });
+    }
+  });
+  $('rlVy').addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.classList.contains('ersval')) {
+      var nr = +t.getAttribute('data-nr');
+      var p = S.byId[t.value];
+      t.blur();
+      if (p) sattErs(nr, p.id, p.namn + ' tjänstgör på plats ' + nr);
+      else ritaRL();
+    } else if (t.id === 'rlDist') {
+      rlF.distrikt = t.value;
+      ritaRL();
+    }
+  });
+  $('rlVy').addEventListener('input', function (e) {
+    if (e.target.id === 'rlQ') { rlF.q = e.target.value; ritaRL(); }
+  });
+  $('rlVy').addEventListener('focusout', function (e) {
+    if (rlVantar && e.target.classList && e.target.classList.contains('ersval')) setTimeout(ritaRL, 0);
+  });
 
   // Kontroll mot ombudslistan
   function visaKontroll() {
@@ -1057,9 +1232,9 @@ select.active { border-color: var(--accent); color: var(--accent-hi); }
     }
   }
   $('btnExport').addEventListener('click', function () {
-    var rader = [['Namn', 'Distrikt', 'Roll', 'Röstberättigad nu', 'Status', 'Incheckad', 'Lämnade', 'Anmäld', 'Anmäld som', 'Tillagd på plats', 'Att kontrollera']];
+    var rader = [['Namn', 'Distrikt', 'Roll', 'Ombudsnr', 'Röstberättigad nu', 'Status', 'Incheckad', 'Lämnade', 'Anmäld', 'Anmäld som', 'Tillagd på plats', 'Att kontrollera']];
     S.personer.forEach(function (p) {
-      rader.push([p.namn, p.distrikt, grund(p), p.rost ? 'Ja' : '', p.status === 'inne' ? 'På plats' : p.status === 'ute' ? 'Lämnat' : 'Saknas',
+      rader.push([p.namn, p.distrikt, grund(p), p.plats || '', p.rost ? 'Ja' : '', p.status === 'inne' ? 'På plats' : p.status === 'ute' ? 'Lämnat' : 'Saknas',
         p.tidIn, p.tidUt, p.anmald ? 'Ja' : 'Nej', p.anmaldSom, p.tillagd ? 'Ja' : '', p.flaggor.join(' ')]);
     });
     laddaNer('Deltagare', rader);

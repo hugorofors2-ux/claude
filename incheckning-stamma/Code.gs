@@ -21,6 +21,7 @@ const FLIK_OMBUD = 'Ombud';
 const FLIK_ROSTLANGD = 'Röstlängd';
 const FLIK_ANMALAN = 'Anmälan';
 const FLIK_INCHECKNING = 'Incheckning';
+const FLIK_TJANSTGORING = 'Tjänstgöring';
 
 // Vilken flik som är facit för ombud och ersättarordning: 'Röstlängd' eller 'Ombud'.
 // Den andra fliken används som kontroll och avvikelser visas under Kontroll.
@@ -49,6 +50,7 @@ const TIDSZON = 'Europe/Stockholm';
 const TITEL = 'MUF Förbundsstämma';
 
 const INCHECKNING_RUBRIKER = ['Nyckel', 'Namn', 'Distrikt', 'Roll', 'Status', 'Incheckad', 'Utcheckad', 'Tillagd på plats'];
+const TJANSTGORING_RUBRIKER = ['Ombudsnr', 'Distrikt', 'Ordinarie ombud', 'Tjänstgörande ersättare', 'Nyckel', 'Sedan'];
 
 // ===== Webbapp =====
 
@@ -98,6 +100,37 @@ function sattStatus(pin, id, status) {
     if (status === 'ute') { if (!inTid) inTid = nu; utTid = nu; }
     if (status === '') { inTid = ''; utTid = ''; }
     skrivIncheckning(ss, m, p, statusText(status), inTid, utTid, f.tillagd ? 'Ja' : '');
+    m.platser.forEach(pl => {
+      if (!pl.tilldelad) return;
+      // Ombudet tar tillbaka sin plats direkt. En ersättare som lämnar frigör platsen.
+      if ((status === 'inne' && pl.ombud === id && pl.giltig) || (status !== 'inne' && pl.tilldelad === id)) {
+        skrivTjanstgoring(ss, m, pl, null);
+      }
+    });
+    hojVersion();
+    return paket(bygg(ss));
+  });
+}
+
+// Sätter vilken ersättare som tjänstgör på en ombudsplats. Tomt ersId tar bort ersättaren.
+function sattErsattare(pin, nr, ersId) {
+  kontrolleraPin(pin);
+  return medLas(() => {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const m = bygg(ss);
+    const pl = m.platser.filter(x => x.nr === Number(nr))[0];
+    if (!pl) throw new Error('Plats ' + nr + ' finns inte.');
+    if (pl.fs) throw new Error('FS-platser har inga ersättare.');
+    let e = null;
+    if (ersId) {
+      e = m.perId[ersId];
+      if (!e || e.roll !== 'Ersättare' || e.distrikt !== pl.distrikt) throw new Error('Välj en ersättare från ' + pl.distrikt + '.');
+      if (e.status !== 'inne') throw new Error(e.namn + ' är inte incheckad.');
+      if (pl.typ === 'ombud') throw new Error('Ombudet är på plats och har platsen.');
+      const annan = m.platser.filter(x => x.nr !== pl.nr && x.tilldelad === ersId)[0];
+      if (annan) throw new Error(e.namn + ' tjänstgör redan på plats ' + annan.nr + '.');
+    }
+    skrivTjanstgoring(ss, m, pl, e);
     hojVersion();
     return paket(bygg(ss));
   });
@@ -133,7 +166,7 @@ function faststallRostlangd(pin) {
     const nr = lista.length + 1;
     const nu = new Date();
     const tid = Utilities.formatDate(nu, TIDSZON, 'yyyy-MM-dd HH:mm');
-    const rader = m.rostlangd.map((r, i) => [i + 1, r.distrikt, r.namn, r.grund]);
+    const rader = m.rostlangd.map(r => [r.nr, r.distrikt, r.namn, r.grund]);
     const forra = lista.length ? hamtaRostlangd(lista[lista.length - 1].nr) : null;
     const diff = jamfor(forra, m.rostlangd);
 
@@ -143,13 +176,13 @@ function faststallRostlangd(pin) {
       ['Röstlängd nr ' + nr, 'Fastställd ' + tid, '', ''],
       ['Röstberättigade', m.rostlangd.length, '', ''],
       ['', '', '', ''],
-      ['Nr', 'Distrikt', 'Namn', 'Grund']
+      ['Ombudsnr', 'Distrikt', 'Namn', 'Grund']
     ].concat(rader);
     if (forra) {
       ut.push(['', '', '', '']);
       ut.push(['Förändring mot röstlängd nr ' + forra.nr, '', '', '']);
-      diff.tillkom.forEach(r => ut.push(['Tillkommit', r.distrikt, r.namn, r.grund || '']));
-      diff.utgick.forEach(r => ut.push(['Utgått', r.distrikt, r.namn, r.grund || '']));
+      diff.tillkom.forEach(r => ut.push(['Tillkommit, plats ' + r.nr, r.distrikt, r.namn, r.grund || '']));
+      diff.utgick.forEach(r => ut.push(['Utgått, plats ' + r.nr, r.distrikt, r.namn, r.grund || '']));
       if (!diff.tillkom.length && !diff.utgick.length) ut.push(['Inga förändringar', '', '', '']);
     }
     sh.getRange(1, 1, ut.length, 4).setValues(ut);
@@ -217,6 +250,7 @@ function bygg(ss) {
   rl.fs.forEach(n => {
     const p = person(n.namn, n.notering);
     p.roller.push({ typ: 'FS' });
+    p.fsNr = n.nr || 0;
     if (!p.distrikt) p.distrikt = 'FS';
   });
 
@@ -366,41 +400,79 @@ function bygg(ss) {
   }
   ordning.forEach(k => { if (P[k].notering) kontroll.push({ niva: 'info', typ: 'Anteckning i listan', text: P[k].namn + ': ' + P[k].notering, id: k }); });
 
-  // Mandat och ersättare per distrikt
+  // Platser 1-113: ett ombud per plats, FS sist
   const inne = p => p.status === 'inne';
-  const giltig = pl => pl.person.raknasPa === pl.plats;
-  const rostlangd = [];
+  const tj = lasTjanstgoring(ss);
+  const platser = [];
+  let lopnr = 0;
+  const nyttNr = nr => { lopnr = nr ? Math.max(lopnr, nr) : lopnr + 1; return nr || lopnr; };
+  ombud.forEach(d => d.platser.forEach(pl => {
+    if (pl.plats.typ !== 'Ombud') return;
+    platser.push({ nr: nyttNr(pl.nr), distrikt: d.namn, ombud: pl.person.id, giltig: pl.person.raknasPa === pl.plats, fs: false });
+  }));
+  const fsLista = ordning.filter(k => P[k].roll === 'FS');
+  if (FS_ROSTRATT) fsLista.forEach(k => platser.push({ nr: nyttNr(P[k].fsNr), distrikt: 'FS', ombud: k, giltig: true, fs: true }));
+  platser.sort((a, b) => a.nr - b.nr);
+
+  // Vem har platsen just nu: ombudet, en bekräftad ersättare eller ingen
+  const upptagen = {};
+  platser.forEach(pl => {
+    const o = P[pl.ombud];
+    o.plats = pl.nr;
+    const t = tj[pl.nr];
+    pl.tilldelad = t && t.ersId && P[t.ersId] ? t.ersId : '';
+    pl.sedan = t ? t.sedan : '';
+    if (pl.giltig && inne(o)) { pl.innehavare = o.id; pl.typ = 'ombud'; return; }
+    pl.innehavare = '';
+    pl.typ = 'tom';
+    if (pl.fs || !pl.tilldelad) return;
+    const e = P[pl.tilldelad];
+    if (e.roll !== 'Ersättare' || e.distrikt !== pl.distrikt) pl.problem = e.namn + ' är inte ersättare för ' + pl.distrikt + '.';
+    else if (!inne(e)) pl.problem = e.namn + ' är inte på plats.';
+    else if (upptagen[e.id]) pl.problem = e.namn + ' tjänstgör redan på plats ' + upptagen[e.id] + '.';
+    else { pl.innehavare = e.id; pl.typ = 'ersattare'; upptagen[e.id] = pl.nr; }
+  });
+
+  // Förslag: nästa ersättare i turordning som är på plats och inte redan tjänstgör
   const distrikt = ombud.map(d => {
     const ombudPl = d.platser.filter(pl => pl.plats.typ === 'Ombud');
-    const ersPl = d.platser.filter(pl => pl.plats.typ === 'Ersättare');
-    const pa = ombudPl.filter(pl => giltig(pl) && inne(pl.person));
-    let lediga = d.mandat - pa.length;
-    const tjanst = [], vantar = [], ersEj = [];
-    ersPl.forEach(pl => {
-      if (!giltig(pl)) return;
-      if (!inne(pl.person)) ersEj.push(pl.person.id);
-      else if (tjanst.length < lediga) tjanst.push(pl.person.id);
-      else vantar.push(pl.person.id);
+    const ersPl = d.platser.filter(pl => pl.plats.typ === 'Ersättare' && pl.person.raknasPa === pl.plats);
+    const mina = platser.filter(pl => pl.distrikt === d.namn && !pl.fs);
+    const lediga = ersPl.map(pl => pl.person.id).filter(id => inne(P[id]) && !upptagen[id]);
+    mina.forEach(pl => {
+      if (pl.typ !== 'tom' || !lediga.length) return;
+      pl.forslag = lediga.shift();
+      P[pl.forslag].forslagPlats = pl.nr;
     });
-    pa.forEach(pl => { pl.person.rost = true; rostlangd.push({ id: pl.person.id, distrikt: d.namn, namn: pl.person.namn, grund: 'Ombud' }); });
-    tjanst.forEach(id => { P[id].rost = true; P[id].tjanstgor = true; rostlangd.push({ id: id, distrikt: d.namn, namn: P[id].namn, grund: 'Ersättare ' + P[id].ersNr }); });
     return {
       namn: d.namn,
       mandat: d.mandat,
-      ombudInne: pa.length,
-      tjanstgor: tjanst,
-      vakanta: Math.max(0, d.mandat - pa.length - tjanst.length),
-      saknas: ombudPl.filter(pl => !giltig(pl) || !inne(pl.person)).map(pl => ({ id: pl.person.id, ejGiltig: !giltig(pl) })),
-      vantar: vantar,
-      ersEj: ersEj,
+      ombudInne: mina.filter(pl => pl.typ === 'ombud').length,
+      tjanstgor: mina.filter(pl => pl.typ === 'ersattare').map(pl => pl.innehavare),
+      forslag: mina.filter(pl => pl.forslag).map(pl => pl.forslag),
+      vakanta: mina.filter(pl => pl.typ === 'tom').length,
+      saknas: ombudPl.filter(pl => pl.person.raknasPa !== pl.plats || !inne(pl.person)).map(pl => ({ id: pl.person.id, ejGiltig: pl.person.raknasPa !== pl.plats })),
+      vantar: lediga,
+      ersEj: ersPl.map(pl => pl.person.id).filter(id => !inne(P[id])),
       ombud: ombudPl.map(pl => pl.person.id),
       ersattare: ersPl.map(pl => pl.person.id)
     };
   });
-  const fsLista = ordning.filter(k => P[k].roll === 'FS');
-  if (FS_ROSTRATT) {
-    fsLista.forEach(k => { if (inne(P[k])) { P[k].rost = true; rostlangd.push({ id: k, distrikt: 'FS', namn: P[k].namn, grund: 'FS' }); } });
-  }
+
+  const rostlangd = [];
+  platser.forEach(pl => {
+    if (!pl.innehavare) return;
+    const h = P[pl.innehavare];
+    h.rost = true;
+    if (pl.typ === 'ersattare') { h.tjanstgor = true; h.plats = pl.nr; }
+    rostlangd.push({
+      nr: pl.nr,
+      id: h.id,
+      distrikt: pl.distrikt,
+      namn: h.namn,
+      grund: pl.fs ? 'FS' : pl.typ === 'ombud' ? 'Ombud' : 'Ersättare ' + h.ersNr + ' för ' + P[pl.ombud].namn
+    });
+  });
 
   const personer = ordning.map(k => P[k]);
   const perId = {};
@@ -409,8 +481,9 @@ function bygg(ss) {
     personer: personer,
     perId: perId,
     distrikt: distrikt,
+    platser: platser,
     fs: { ids: fsLista, inne: fsLista.filter(k => inne(P[k])).length, rostratt: FS_ROSTRATT },
-    totalMandat: ombud.reduce((s, d) => s + d.mandat, 0) + (FS_ROSTRATT ? fsLista.length : 0),
+    totalMandat: platser.length,
     rostlangd: rostlangd,
     kontroll: kontroll,
     incheckning: inch,
@@ -441,12 +514,19 @@ function paket(m) {
       tillagd: p.tillagd,
       rost: !!p.rost,
       tjanstgor: !!p.tjanstgor,
+      plats: p.plats || 0,
+      forslagPlats: p.forslagPlats || 0,
       flaggor: p.flaggor
     })),
     distrikt: m.distrikt,
     fs: m.fs,
     totalMandat: m.totalMandat,
-    rostlangd: m.rostlangd.map(r => r.id),
+    rostlangd: m.rostlangd.map(r => ({ nr: r.nr, id: r.id, grund: r.grund })),
+    platser: m.platser.map(pl => ({
+      nr: pl.nr, distrikt: pl.distrikt, ombud: pl.ombud, giltig: pl.giltig, fs: pl.fs,
+      typ: pl.typ, innehavare: pl.innehavare, tilldelad: pl.tilldelad, forslag: pl.forslag || '',
+      problem: pl.problem || '', sedan: pl.sedan
+    })),
     kontroll: m.kontroll,
     facit: m.facit,
     rostlangder: lista,
@@ -511,7 +591,7 @@ function lasRostlangdsflik(ss, kravs) {
   const sh = flik(ss, FLIK_ROSTLANGD, kravs);
   if (!sh) return tom;
   const v = sh.getDataRange().getDisplayValues();
-  let hr = -1, dK = -1, nK = -1, eK = -1;
+  let hr = -1, dK = -1, nK = -1, eK = -1, nrK = -1;
   for (let r = 0; r < Math.min(5, v.length) && hr < 0; r++) {
     const h = v[r].map(nyckel);
     if (h.indexOf('distrikt') >= 0) {
@@ -519,6 +599,7 @@ function lasRostlangdsflik(ss, kravs) {
       dK = h.indexOf('distrikt');
       nK = h.indexOf('namn');
       eK = h.findIndex(c => c.indexOf('ersattare') === 0);
+      nrK = h.findIndex(c => ['ombud', 'nr', 'ombudsnr', 'ombudsnummer', 'nummer'].indexOf(c) >= 0);
     }
   }
   if (hr < 0) {
@@ -537,6 +618,7 @@ function lasRostlangdsflik(ss, kravs) {
     const d = text(rad[dK]);
     if (!d) continue;
     const s = stada(rad[nK]);
+    s.nr = nrK >= 0 ? parseInt(text(rad[nrK]), 10) || 0 : 0;
     if (d.toUpperCase() === 'FS') { if (s.namn) fs.push(s); continue; }
     if (!per[d]) { per[d] = { ombud: [], ers: [], dubbletter: [] }; ordn.push(d); }
     const x = per[d];
@@ -602,6 +684,35 @@ function incheckningsflik(ss, skapa) {
   return sh;
 }
 
+function lasTjanstgoring(ss) {
+  const sh = flik(ss, FLIK_TJANSTGORING, false);
+  const ut = {};
+  if (!sh) return ut;
+  const v = sh.getDataRange().getDisplayValues();
+  for (let r = 1; r < v.length; r++) {
+    const nr = parseInt(text(v[r][0]), 10);
+    if (!nr) continue;
+    ut[nr] = { rad: r + 1, ersId: text(v[r][4]) || nyckel(v[r][3]), sedan: tidText(v[r][5]) };
+  }
+  return ut;
+}
+
+function skrivTjanstgoring(ss, m, pl, e) {
+  let sh = flik(ss, FLIK_TJANSTGORING, false);
+  if (!sh) {
+    sh = ss.insertSheet(FLIK_TJANSTGORING);
+    sh.getRange(1, 1, 1, TJANSTGORING_RUBRIKER.length).setValues([TJANSTGORING_RUBRIKER]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  const nu = Utilities.formatDate(new Date(), TIDSZON, 'yyyy-MM-dd HH:mm');
+  const rad = [[pl.nr, pl.distrikt, m.perId[pl.ombud].namn, e ? e.namn : '', e ? e.id : '', e ? nu : '']];
+  const v = sh.getDataRange().getDisplayValues();
+  let nr = -1;
+  for (let r = 1; r < v.length; r++) if (parseInt(text(v[r][0]), 10) === pl.nr) nr = r + 1;
+  if (nr < 0) nr = sh.getLastRow() + 1;
+  sh.getRange(nr, 1, 1, rad[0].length).setNumberFormat('@').setValues(rad);
+}
+
 function lasIncheckning(ss) {
   const sh = incheckningsflik(ss, false);
   const ut = {};
@@ -649,7 +760,7 @@ function hamtaRostlangd(nr) {
 
 function sparaRostlangd(nr, tid, flik, rostlangd) {
   const props = PropertiesService.getScriptProperties();
-  props.setProperty('RL_' + nr, JSON.stringify({ tid: tid, rader: rostlangd.map(r => [r.id, r.distrikt, r.namn, r.grund]) }));
+  props.setProperty('RL_' + nr, JSON.stringify({ tid: tid, rader: rostlangd.map(r => [r.id, r.distrikt, r.namn, r.grund, r.nr]) }));
   const lista = sparadeRostlangder();
   lista.push({ nr: nr, tid: tid, flik: flik, antal: rostlangd.length });
   props.setProperty('RL_LISTA', JSON.stringify(lista));
@@ -658,12 +769,12 @@ function sparaRostlangd(nr, tid, flik, rostlangd) {
 function jamfor(forra, nu) {
   if (!forra) return { tillkom: [], utgick: [] };
   const fore = {};
-  forra.rader.forEach(r => { fore[r[0]] = { distrikt: r[1], namn: r[2], grund: r[3] }; });
+  forra.rader.forEach(r => { fore[r[0]] = r; });
   const efter = {};
   nu.forEach(r => { efter[r.id] = r; });
   return {
-    tillkom: nu.filter(r => !fore[r.id]).map(r => ({ distrikt: r.distrikt, namn: r.namn, grund: r.grund })),
-    utgick: forra.rader.filter(r => !efter[r[0]]).map(r => ({ distrikt: r[1], namn: r[2], grund: r[3] }))
+    tillkom: nu.filter(r => !fore[r.id]).map(r => ({ nr: r.nr, distrikt: r.distrikt, namn: r.namn, grund: r.grund })),
+    utgick: forra.rader.filter(r => !efter[r[0]]).map(r => ({ nr: r[4] || '', distrikt: r[1], namn: r[2], grund: r[3] }))
   };
 }
 
